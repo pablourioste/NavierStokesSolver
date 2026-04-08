@@ -1,0 +1,14 @@
+# =============================================================================
+# Condiciones de Contorno — Lid-Driven Cavity   Re = 100
+# Dominio 1x1.  Tapa norte deslizante U_lid = 1.0 m/s.
+# nu = 0.01  →  Re = U_lid * L / nu = 1*1/0.01 = 100
+#
+# Formato: BOCO_NAME  CARA  IDX_START  IDX_END  TIPO           VALOR
+# IDX_END = 9999 se recorta automáticamente al tamaño de la malla
+# =============================================================================
+
+# BOCO_NAME   CARA    START   END    TIPO              VALOR
+lid           NORTH   0       9999   WALL_FIXED_VALUE   1.0
+wall_south    SOUTH   0       9999   WALL               0.0
+wall_west     WEST    0       9999   WALL               0.0
+wall_east     EAST    0       9999   WALL               0.0
