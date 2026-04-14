@@ -1,0 +1,19 @@
+# --- Parámetros de Mallado ---
+
+# Betas de estiramiento
+beta_x_west   = 0.5
+beta_x_east   = 0.5
+beta_y_north  = 0.0
+beta_y_south  = 0.0
+beta_x_center = 0.0
+beta_y_center = 0.0
+
+# Número de celdas
+# Zona única: todas las celdas en west/south.
+# center y east = 0 (longitud cero, no se copian a la malla).
+N_cells_west    = 40
+M_cells_west    = 40
+N_cells_center  = 0
+M_cells_center  = 0
+N_cells_east    = 0
+M_cells_east    = 0
