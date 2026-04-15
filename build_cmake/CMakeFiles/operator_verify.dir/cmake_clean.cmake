@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify"
-  "/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify.pdb"
+  "/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify"
+  "/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify.pdb"
   "CMakeFiles/operator_verify.dir/link.d"
   "CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o"
   "CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o.d"

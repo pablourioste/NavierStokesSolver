@@ -1,8 +1,8 @@
 CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o: \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/LaplaceOperator.cpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/operators/LaplaceOperator.cpp \
  /usr/include/stdc-predef.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/LaplaceOperator.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/Mesh_config.h \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/operators/LaplaceOperator.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/Mesh_config.h \
  /usr/include/c++/13/vector /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -129,11 +129,11 @@ CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o: \
  /usr/include/c++/13/bits/charconv.h \
  /usr/include/c++/13/bits/basic_string.tcc /usr/include/c++/13/utility \
  /usr/include/c++/13/bits/stl_relops.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/Mesh_config.h \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/Mesh_config.h \
  /usr/include/c++/13/stdexcept /usr/include/c++/13/exception \
  /usr/include/c++/13/bits/exception_ptr.h \
  /usr/include/c++/13/bits/cxxabi_init_exception.h \
  /usr/include/c++/13/typeinfo /usr/include/c++/13/bits/nested_exception.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver/sparse/solver_class_sparse.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/../PressurePoissonSystem.hpp
+ /home/pablo_urioste/projects/NavierStokesSolver/src/solver/sparse/solver_class_sparse.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/../PressurePoissonSystem.hpp

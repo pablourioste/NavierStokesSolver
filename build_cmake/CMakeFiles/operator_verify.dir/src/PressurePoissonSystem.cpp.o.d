@@ -1,8 +1,8 @@
 CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o: \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.cpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.cpp \
  /usr/include/stdc-predef.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/Mesh_config.h \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/Mesh_config.h \
  /usr/include/c++/13/vector /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -132,13 +132,13 @@ CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o: \
  /usr/include/c++/13/exception /usr/include/c++/13/bits/exception_ptr.h \
  /usr/include/c++/13/bits/cxxabi_init_exception.h \
  /usr/include/c++/13/typeinfo /usr/include/c++/13/bits/nested_exception.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/LaplaceOperator.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/Mesh_config.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver/sparse/solver_class_sparse.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/../PressurePoissonSystem.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DivergenceOperator.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/GradientOperator.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/operators/LaplaceOperator.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/Mesh_config.h \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/solver/sparse/solver_class_sparse.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/../PressurePoissonSystem.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DivergenceOperator.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/operators/GradientOperator.hpp \
  /usr/include/c++/13/cmath /usr/include/math.h \
  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \

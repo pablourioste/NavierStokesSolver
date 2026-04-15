@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src -I/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh -I/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver -I/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators
+CXX_INCLUDES = -I/home/pablo_urioste/projects/NavierStokesSolver/src -I/home/pablo_urioste/projects/NavierStokesSolver/src/mesh -I/home/pablo_urioste/projects/NavierStokesSolver/src/solver -I/home/pablo_urioste/projects/NavierStokesSolver/src/operators
 
-CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2
+CXX_FLAGS = -std=gnu++17 -Wall -Wextra -O2
 

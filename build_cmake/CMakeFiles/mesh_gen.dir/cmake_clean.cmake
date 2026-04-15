@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/mesh_gen"
-  "/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/mesh_gen.pdb"
+  "/home/pablo_urioste/projects/NavierStokesSolver/build/mesh_gen"
+  "/home/pablo_urioste/projects/NavierStokesSolver/build/mesh_gen.pdb"
   "CMakeFiles/mesh_gen.dir/link.d"
   "CMakeFiles/mesh_gen.dir/src/MomentumSolver.cpp.o"
   "CMakeFiles/mesh_gen.dir/src/MomentumSolver.cpp.o.d"

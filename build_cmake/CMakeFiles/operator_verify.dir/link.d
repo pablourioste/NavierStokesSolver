@@ -1,4 +1,4 @@
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: \
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: \
   /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o \
   /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o \
   /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o \

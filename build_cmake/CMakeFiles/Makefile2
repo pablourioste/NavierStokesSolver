@@ -54,10 +54,10 @@ RM = /snap/cmake/1530/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation
+CMAKE_SOURCE_DIR = /home/pablo_urioste/projects/NavierStokesSolver
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake
+CMAKE_BINARY_DIR = /home/pablo_urioste/projects/NavierStokesSolver/build_cmake
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -88,14 +88,14 @@ clean: CMakeFiles/operator_verify.dir/clean
 CMakeFiles/mesh_gen.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mesh_gen.dir/build.make CMakeFiles/mesh_gen.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mesh_gen.dir/build.make CMakeFiles/mesh_gen.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10 "Built target mesh_gen"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10 "Built target mesh_gen"
 .PHONY : CMakeFiles/mesh_gen.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/mesh_gen.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles 10
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles 10
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/mesh_gen.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles 0
 .PHONY : CMakeFiles/mesh_gen.dir/rule
 
 # Convenience name for target.
@@ -105,7 +105,7 @@ mesh_gen: CMakeFiles/mesh_gen.dir/rule
 # codegen rule for target.
 CMakeFiles/mesh_gen.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mesh_gen.dir/build.make CMakeFiles/mesh_gen.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10 "Finished codegen for target mesh_gen"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10 "Finished codegen for target mesh_gen"
 .PHONY : CMakeFiles/mesh_gen.dir/codegen
 
 # clean rule for target.
@@ -120,14 +120,14 @@ CMakeFiles/mesh_gen.dir/clean:
 CMakeFiles/operator_verify.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/operator_verify.dir/build.make CMakeFiles/operator_verify.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/operator_verify.dir/build.make CMakeFiles/operator_verify.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19,20 "Built target operator_verify"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19,20 "Built target operator_verify"
 .PHONY : CMakeFiles/operator_verify.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/operator_verify.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles 10
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles 10
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/operator_verify.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles 0
 .PHONY : CMakeFiles/operator_verify.dir/rule
 
 # Convenience name for target.
@@ -137,7 +137,7 @@ operator_verify: CMakeFiles/operator_verify.dir/rule
 # codegen rule for target.
 CMakeFiles/operator_verify.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/operator_verify.dir/build.make CMakeFiles/operator_verify.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19,20 "Finished codegen for target operator_verify"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19,20 "Finished codegen for target operator_verify"
 .PHONY : CMakeFiles/operator_verify.dir/codegen
 
 # clean rule for target.

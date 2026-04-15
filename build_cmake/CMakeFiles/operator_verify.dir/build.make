@@ -53,10 +53,10 @@ RM = /snap/cmake/1530/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation
+CMAKE_SOURCE_DIR = /home/pablo_urioste/projects/NavierStokesSolver
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake
+CMAKE_BINARY_DIR = /home/pablo_urioste/projects/NavierStokesSolver/build_cmake
 
 # Include any dependencies generated for this target.
 include CMakeFiles/operator_verify.dir/depend.make
@@ -73,130 +73,130 @@ CMakeFiles/operator_verify.dir/codegen:
 .PHONY : CMakeFiles/operator_verify.dir/codegen
 
 CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/verification/verify_operators.cpp
+CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/verification/verify_operators.cpp
 CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o -MF CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o.d -o CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/verification/verify_operators.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o -MF CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o.d -o CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/verification/verify_operators.cpp
 
 CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/verification/verify_operators.cpp > CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/verification/verify_operators.cpp > CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.i
 
 CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/verification/verify_operators.cpp -o CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/verification/verify_operators.cpp -o CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.s
 
 CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/MeshGenerator.cpp
+CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/MeshGenerator.cpp
 CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o -MF CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/MeshGenerator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o -MF CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/MeshGenerator.cpp
 
 CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/MeshGenerator.cpp > CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/MeshGenerator.cpp > CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.i
 
 CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/MeshGenerator.cpp -o CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/MeshGenerator.cpp -o CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.s
 
 CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.cpp
+CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.cpp
 CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o -MF CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o.d -o CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o -MF CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o.d -o CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.cpp
 
 CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.cpp > CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.cpp > CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.i
 
 CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.cpp -o CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.cpp -o CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.s
 
 CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver/sparse/solver_sparse.cpp
+CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/solver/sparse/solver_sparse.cpp
 CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o -MF CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o.d -o CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver/sparse/solver_sparse.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o -MF CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o.d -o CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/solver/sparse/solver_sparse.cpp
 
 CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver/sparse/solver_sparse.cpp > CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/solver/sparse/solver_sparse.cpp > CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.i
 
 CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver/sparse/solver_sparse.cpp -o CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/solver/sparse/solver_sparse.cpp -o CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.s
 
 CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/MomentumSolver.cpp
+CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/MomentumSolver.cpp
 CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o -MF CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o.d -o CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/MomentumSolver.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o -MF CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o.d -o CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/MomentumSolver.cpp
 
 CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/MomentumSolver.cpp > CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/MomentumSolver.cpp > CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.i
 
 CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/MomentumSolver.cpp -o CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/MomentumSolver.cpp -o CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.s
 
 CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/LaplaceOperator.cpp
+CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/operators/LaplaceOperator.cpp
 CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/LaplaceOperator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/operators/LaplaceOperator.cpp
 
 CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/LaplaceOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/operators/LaplaceOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.i
 
 CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/LaplaceOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/operators/LaplaceOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.s
 
 CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/GradientOperator.cpp
+CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/operators/GradientOperator.cpp
 CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/GradientOperator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/operators/GradientOperator.cpp
 
 CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/GradientOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/operators/GradientOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.i
 
 CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/GradientOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/operators/GradientOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.s
 
 CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DivergenceOperator.cpp
+CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DivergenceOperator.cpp
 CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DivergenceOperator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DivergenceOperator.cpp
 
 CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DivergenceOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DivergenceOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.i
 
 CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DivergenceOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DivergenceOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.s
 
 CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o: CMakeFiles/operator_verify.dir/flags.make
-CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DiffusionOperator.cpp
+CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o: /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DiffusionOperator.cpp
 CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o: CMakeFiles/operator_verify.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DiffusionOperator.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o -MF CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o.d -o CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o -c /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DiffusionOperator.cpp
 
 CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DiffusionOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DiffusionOperator.cpp > CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.i
 
 CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DiffusionOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DiffusionOperator.cpp -o CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.s
 
 # Object files for target operator_verify
 operator_verify_OBJECTS = \
@@ -213,23 +213,23 @@ operator_verify_OBJECTS = \
 # External object files for target operator_verify
 operator_verify_EXTERNAL_OBJECTS =
 
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/build.make
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/compiler_depend.ts
-/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify: CMakeFiles/operator_verify.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify"
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/verification/verify_operators.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/mesh/MeshGenerator.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/PressurePoissonSystem.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/solver/sparse/solver_sparse.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/MomentumSolver.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/LaplaceOperator.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/GradientOperator.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/DivergenceOperator.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/src/operators/DiffusionOperator.cpp.o
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/build.make
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/compiler_depend.ts
+/home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify: CMakeFiles/operator_verify.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable /home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/operator_verify.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-CMakeFiles/operator_verify.dir/build: /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build/operator_verify
+CMakeFiles/operator_verify.dir/build: /home/pablo_urioste/projects/NavierStokesSolver/build/operator_verify
 .PHONY : CMakeFiles/operator_verify.dir/build
 
 CMakeFiles/operator_verify.dir/clean:
@@ -237,6 +237,6 @@ CMakeFiles/operator_verify.dir/clean:
 .PHONY : CMakeFiles/operator_verify.dir/clean
 
 CMakeFiles/operator_verify.dir/depend:
-	cd /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/build_cmake/CMakeFiles/operator_verify.dir/DependInfo.cmake "--color=$(COLOR)" operator_verify
+	cd /home/pablo_urioste/projects/NavierStokesSolver/build_cmake && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/pablo_urioste/projects/NavierStokesSolver /home/pablo_urioste/projects/NavierStokesSolver /home/pablo_urioste/projects/NavierStokesSolver/build_cmake /home/pablo_urioste/projects/NavierStokesSolver/build_cmake /home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles/operator_verify.dir/DependInfo.cmake "--color=$(COLOR)" operator_verify
 .PHONY : CMakeFiles/operator_verify.dir/depend
 
