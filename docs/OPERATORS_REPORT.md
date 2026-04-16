@@ -17,7 +17,7 @@ The solver uses a **Marker-and-Cell (MAC) staggered grid** on a rectangular doma
      ┌──────┬──────┬──────┐
      │      │      │      │
   u  │  p   │  p   │  p   │  u   ← P cells, U faces (east/west)
- (1,j)│(1,j) │(2,j) │(3,j) │(4,j)
+(1,j)│(1,j) │(2,j) │(3,j) │(4,j)
      │      │      │      │
      └──────┴──────┴──────┘
                      v(i, 1)     ← south boundary row (V-nodes)
