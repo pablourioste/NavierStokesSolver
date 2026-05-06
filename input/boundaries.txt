@@ -1,22 +1,8 @@
 # =============================================================================
-# Condiciones de Contorno (Boundary Conditions)
+# Condiciones de Contorno — Lid-Driven Cavity (LDC)
+# Formato: BOCO_NAME  CARA  IDX_START  IDX_END  TIPO              VALOR
 # =============================================================================
-# Formato de cada línea:
-#   BOCO_NAME   CARA    IDX_START   IDX_END   TIPO          [VALOR]
-#
-# BOCO_NAME  : Nombre identificador del grupo de frontera (boco)
-# CARA       : WEST | EAST | SOUTH | NORTH
-# IDX_START  : Índice inicial de la franja (incluido)
-# IDX_END    : Índice final de la franja (excluido)
-# TIPO       : INLET | OUTLET | WALL | WALL_FIXED | SYMMETRY
-# VALOR      : (Opcional) Velocidad de entrada u otro valor asociado
-#
-# WEST/EAST  -> índice recorre celdas en Y (j = 0 .. M_cells_y)
-# SOUTH/NORTH-> índice recorre celdas en X (i = 0 .. N_cells_x)
-# =============================================================================
-
-# BOCO_NAME   CARA    START   END   TIPO     VALOR
-inlet         WEST    0       3     INLET    1.0
-outlet        EAST    0       3     OUTLET   0.0
-wall_south    SOUTH   0       3     WALL     0.0
-wall_north    NORTH   0       3     WALL     0.0
+lid           NORTH   0       9999     WALL_FIXED_VALUE   1.0
+wall_south    SOUTH   0       9999     WALL               0.0
+wall_west     WEST    0       9999     WALL               0.0
+wall_east     EAST    0       9999     WALL               0.0

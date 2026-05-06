@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/home/pablo_urioste/projects/NavierStokesSolver/src -I/home/pablo_urioste/projects/NavierStokesSolver/src/mesh -I/home/pablo_urioste/projects/NavierStokesSolver/src/solver -I/home/pablo_urioste/projects/NavierStokesSolver/src/operators
 
-CXX_FLAGS = -std=gnu++17 -Wall -Wextra -O2
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2
 

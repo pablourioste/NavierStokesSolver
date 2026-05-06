@@ -1,52 +1,14 @@
-"""
-plot_results.py — Visualización y validación Lid-Driven Cavity
-Compara resultados del solver con Ghia et al. (1982), Re=100.
-
-Uso:
-    python3 plot_results.py
-
-Requiere:  numpy, matplotlib, pandas
-    pip install numpy matplotlib pandas
-"""
-
 import os
+import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from scipy.interpolate import RegularGridInterpolator
 
-# =============================================================================
-# Rutas Robustas
-# =============================================================================
-# Detecta la carpeta donde está este script y asume que "output" está dentro
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
-INPUT_DIR = os.path.join(BASE_DIR, "input")
-
-# =============================================================================
-# Leer parámetros de simulación y seleccionar columna Ghia correcta
-# =============================================================================
-def read_sim_params(path):
-    params = {"Re": 100, "U_lid": 1.0}
-    if os.path.exists(path):
-        with open(path) as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if "=" in line:
-                    k, v = line.split("=", 1)
-                    params[k.strip()] = float(v.strip())
-    return params
-
-sim_params = read_sim_params(os.path.join(INPUT_DIR, "sim_params.txt"))
-SIM_RE  = sim_params["Re"]
-U_LID   = sim_params["U_lid"]
-
-GHIA_RE_LIST = [100, 400, 1000, 3200, 5000, 7500, 10000]
-ghia_col = min(range(len(GHIA_RE_LIST)), key=lambda i: abs(GHIA_RE_LIST[i] - SIM_RE))
-print(f"  Re simulado = {SIM_RE:.0f}  →  columna Ghia Re={GHIA_RE_LIST[ghia_col]}")
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
 
 # =============================================================================
 # Datos de referencia — Ghia et al. (1982), todas las Re
@@ -91,8 +53,11 @@ ghia_v_table = np.array([
     [0.0625,  0.09233,  0.18360,  0.27485,  0.39560,  0.42447,  0.43979,  0.43983],
     [0.0000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000],
 ])
-ghia_u = np.column_stack([ghia_u_table[:, 0], ghia_u_table[:, 1 + ghia_col]])
-ghia_v = np.column_stack([ghia_v_table[:, 0], ghia_v_table[:, 1 + ghia_col]])
+GHIA_RE_LIST = [100, 400, 1000, 3200, 5000, 7500, 10000]
+
+
+def ghia_column_for_re(re_value):
+    return min(range(len(GHIA_RE_LIST)), key=lambda i: abs(GHIA_RE_LIST[i] - re_value))
 
 
 # =============================================================================
@@ -160,128 +125,129 @@ def read_vtk_rectilinear(path):
     return xc, yc, field
 
 
-# =============================================================================
-# Cargar datos del solver
-# =============================================================================
-def load_centerline(name):
-    clean_name = os.path.basename(name) # Quita paths erróneos previos
-    path = os.path.join(OUTPUT_DIR, clean_name)
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"❌ No se encontró {path}. Ejecuta el solver primero.")
-    return pd.read_csv(path)
+def list_reynolds_cases(output_dir):
+    cases = []
+    if not os.path.isdir(output_dir):
+        return cases
+    for name in os.listdir(output_dir):
+        m = re.fullmatch(r"Re_(\d+)", name)
+        if m and os.path.isdir(os.path.join(output_dir, name)):
+            cases.append(int(m.group(1)))
+    return sorted(cases)
 
 
-print(f"📂 Buscando resultados en: {OUTPUT_DIR}")
+def load_case(case_dir):
+    df_u = pd.read_csv(os.path.join(case_dir, "centerline_u.csv"))
+    df_v = pd.read_csv(os.path.join(case_dir, "centerline_v.csv"))
+    xc_p, yc_p, p_field = read_vtk_rectilinear(os.path.join(case_dir, "pressure.vtk"))
+    xc_u, yc_u, u_field = read_vtk_rectilinear(os.path.join(case_dir, "u_velocity.vtk"))
+    xc_v, yc_v, v_field = read_vtk_rectilinear(os.path.join(case_dir, "v_velocity.vtk"))
+    return df_u, df_v, xc_p, yc_p, p_field, xc_u, yc_u, u_field, xc_v, yc_v, v_field
 
-try:
-    df_u = load_centerline("centerline_u.csv")
-    df_v = load_centerline("centerline_v.csv")
 
-    xc_p, yc_p, p_field   = read_vtk_rectilinear(os.path.join(OUTPUT_DIR, "pressure.vtk"))
-    xc_u, yc_u, u_field   = read_vtk_rectilinear(os.path.join(OUTPUT_DIR, "u_velocity.vtk"))
-    xc_v, yc_v, v_field   = read_vtk_rectilinear(os.path.join(OUTPUT_DIR, "v_velocity.vtk"))
+def plot_case(re_value, case_dir):
+    df_u, df_v, xc_p, yc_p, p_field, xc_u, yc_u, u_field, xc_v, yc_v, v_field = load_case(case_dir)
 
-    print(f"  Malla P: {len(xc_p)} x {len(yc_p)} celdas")
-    print(f"  Malla U: {len(xc_u)} x {len(yc_u)} celdas")
-    print(f"  Malla V: {len(xc_v)} x {len(yc_v)} celdas")
-    print("✅ Archivos cargados correctamente.")
-except Exception as e:
-    print(f"\nError durante la carga: {e}")
-    print("Revisa la ruta del OUTPUT_DIR o los nombres de los archivos.")
-    exit()
+    ghia_col = ghia_column_for_re(re_value)
+    ghia_u = np.column_stack([ghia_u_table[:, 0], ghia_u_table[:, 1 + ghia_col]])
+    ghia_v = np.column_stack([ghia_v_table[:, 0], ghia_v_table[:, 1 + ghia_col]])
 
-# =============================================================================
-# Figura principal — 2x3 subplots
-# =============================================================================
-fig = plt.figure(figsize=(16, 10))
-fig.suptitle(f"Lid-Driven Cavity  —  Re = {SIM_RE:.0f}  |  Solver vs Ghia et al. (1982)",
-             fontsize=14, fontweight="bold")
-gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.38, wspace=0.32)
+    fig = plt.figure(figsize=(16, 10))
+    fig.suptitle(f"Lid-Driven Cavity  —  Re = {re_value}", fontsize=14, fontweight="bold")
+    gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.38, wspace=0.32)
 
-# ---- 1. Campo de presión ----
-ax_p = fig.add_subplot(gs[0, 0])
-Xp, Yp = np.meshgrid(xc_p, yc_p)
-cp = ax_p.contourf(Xp, Yp, p_field, levels=40, cmap="RdBu_r")
-fig.colorbar(cp, ax=ax_p, label="p")
-ax_p.set_title("Presión")
-ax_p.set_xlabel("x"); ax_p.set_ylabel("y")
-ax_p.set_aspect("equal")
+    ax_p = fig.add_subplot(gs[0, 0])
+    Xp, Yp = np.meshgrid(xc_p, yc_p)
+    cp = ax_p.contourf(Xp, Yp, p_field, levels=40, cmap="RdBu_r")
+    fig.colorbar(cp, ax=ax_p, label="p")
+    ax_p.set_title("Presion")
+    ax_p.set_xlabel("x"); ax_p.set_ylabel("y"); ax_p.set_aspect("equal")
 
-# ---- 2. Campo u ----
-ax_u2d = fig.add_subplot(gs[0, 1])
-Xu, Yu = np.meshgrid(xc_u, yc_u)
-cu = ax_u2d.contourf(Xu, Yu, u_field, levels=40, cmap="coolwarm")
-fig.colorbar(cu, ax=ax_u2d, label="u")
-ax_u2d.set_title("Velocidad u")
-ax_u2d.set_xlabel("x"); ax_u2d.set_ylabel("y")
-ax_u2d.set_aspect("equal")
+    ax_u2d = fig.add_subplot(gs[0, 1])
+    Xu, Yu = np.meshgrid(xc_u, yc_u)
+    cu = ax_u2d.contourf(Xu, Yu, u_field, levels=40, cmap="coolwarm")
+    fig.colorbar(cu, ax=ax_u2d, label="u")
+    ax_u2d.set_title("Velocidad u")
+    ax_u2d.set_xlabel("x"); ax_u2d.set_ylabel("y"); ax_u2d.set_aspect("equal")
 
-# ---- 3. Campo v ----
-ax_v2d = fig.add_subplot(gs[0, 2])
-Xv, Yv = np.meshgrid(xc_v, yc_v)
-cv = ax_v2d.contourf(Xv, Yv, v_field, levels=40, cmap="coolwarm")
-fig.colorbar(cv, ax=ax_v2d, label="v")
-ax_v2d.set_title("Velocidad v")
-ax_v2d.set_xlabel("x"); ax_v2d.set_ylabel("y")
-ax_v2d.set_aspect("equal")
+    ax_v2d = fig.add_subplot(gs[0, 2])
+    Xv, Yv = np.meshgrid(xc_v, yc_v)
+    cv = ax_v2d.contourf(Xv, Yv, v_field, levels=40, cmap="coolwarm")
+    fig.colorbar(cv, ax=ax_v2d, label="v")
+    ax_v2d.set_title("Velocidad v")
+    ax_v2d.set_xlabel("x"); ax_v2d.set_ylabel("y"); ax_v2d.set_aspect("equal")
 
-# ---- 4. Comparación u(y) — línea central vertical ----
-ax_uc = fig.add_subplot(gs[1, 0])
-ax_uc.plot(df_u["u_norm"], df_u["y_norm"],
-           color="steelblue", linewidth=2, label="Solver")
-ax_uc.scatter(ghia_u[:, 1], ghia_u[:, 0],
-              color="red", zorder=5, s=40, label=f"Ghia Re={GHIA_RE_LIST[ghia_col]}")
-ax_uc.axvline(0, color="gray", linewidth=0.5, linestyle="--")
-ax_uc.axhline(0.5, color="gray", linewidth=0.5, linestyle="--")
-ax_uc.set_xlabel("u / U_lid")
-ax_uc.set_ylabel("y / H")
-ax_uc.set_title("u(y)  —  línea central  x=L/2")
-ax_uc.legend(fontsize=8)
-ax_uc.grid(True, alpha=0.3)
+    ax_uc = fig.add_subplot(gs[1, 0])
+    ax_uc.plot(df_u["u_norm"], df_u["y_norm"], color="steelblue", linewidth=2, label="Solver")
+    ax_uc.scatter(ghia_u[:, 1], ghia_u[:, 0], color="red", zorder=5, s=40, label=f"Ghia Re={GHIA_RE_LIST[ghia_col]}")
+    ax_uc.set_xlabel("u / U_lid"); ax_uc.set_ylabel("y / H")
+    ax_uc.set_title("u(y)  x=L/2"); ax_uc.grid(True, alpha=0.3); ax_uc.legend(fontsize=8)
 
-# ---- 5. Comparación v(x) — línea central horizontal ----
-ax_vc = fig.add_subplot(gs[1, 1])
-ax_vc.plot(df_v["x_norm"], df_v["v_norm"],
-           color="steelblue", linewidth=2, label="Solver")
-ax_vc.scatter(ghia_v[:, 0], ghia_v[:, 1],
-              color="red", zorder=5, s=40, label=f"Ghia Re={GHIA_RE_LIST[ghia_col]}")
-ax_vc.axhline(0, color="gray", linewidth=0.5, linestyle="--")
-ax_vc.axvline(0.5, color="gray", linewidth=0.5, linestyle="--")
-ax_vc.set_xlabel("x / L")
-ax_vc.set_ylabel("v / U_lid")
-ax_vc.set_title("v(x)  —  línea central  y=H/2")
-ax_vc.legend(fontsize=8)
-ax_vc.grid(True, alpha=0.3)
+    ax_vc = fig.add_subplot(gs[1, 1])
+    ax_vc.plot(df_v["x_norm"], df_v["v_norm"], color="steelblue", linewidth=2, label="Solver")
+    ax_vc.scatter(ghia_v[:, 0], ghia_v[:, 1], color="red", zorder=5, s=40, label=f"Ghia Re={GHIA_RE_LIST[ghia_col]}")
+    ax_vc.set_xlabel("x / L"); ax_vc.set_ylabel("v / U_lid")
+    ax_vc.set_title("v(x)  y=H/2"); ax_vc.grid(True, alpha=0.3); ax_vc.legend(fontsize=8)
 
-# ---- 6. Streamlines (interpolando U y V a malla P, luego a malla uniforme) ----
-ax_str = fig.add_subplot(gs[1, 2])
-# Interpola U/V (mallas staggered) a centros de celdas P
-ny, nx = len(yc_p), len(xc_p)
-u_on_p = 0.5 * (u_field[:, :-1] + u_field[:, 1:]) if u_field.shape[1] > nx \
-         else u_field[:ny, :nx]
-v_on_p = 0.5 * (v_field[:-1, :] + v_field[1:, :]) if v_field.shape[0] > ny \
-         else v_field[:ny, :nx]
-u_on_p = u_on_p[:ny, :nx]
-v_on_p = v_on_p[:ny, :nx]
+    ax_str = fig.add_subplot(gs[1, 2])
+    ny, nx = len(yc_p), len(xc_p)
+    u_on_p = 0.5 * (u_field[:, :-1] + u_field[:, 1:]) if u_field.shape[1] > nx else u_field[:ny, :nx]
+    v_on_p = 0.5 * (v_field[:-1, :] + v_field[1:, :]) if v_field.shape[0] > ny else v_field[:ny, :nx]
+    u_on_p = u_on_p[:ny, :nx]
+    v_on_p = v_on_p[:ny, :nx]
+    x_uni = np.linspace(xc_p[0], xc_p[-1], nx)
+    y_uni = np.linspace(yc_p[0], yc_p[-1], ny)
+    interp_u = RegularGridInterpolator((yc_p, xc_p), u_on_p, method="linear")
+    interp_v = RegularGridInterpolator((yc_p, xc_p), v_on_p, method="linear")
+    Xuu, Yuu = np.meshgrid(x_uni, y_uni)
+    pts = np.stack([Yuu.ravel(), Xuu.ravel()], axis=1)
+    u_uni = interp_u(pts).reshape(ny, nx)
+    v_uni = interp_v(pts).reshape(ny, nx)
+    speed = np.sqrt(u_uni ** 2 + v_uni ** 2)
+    ax_str.streamplot(x_uni, y_uni, u_uni, v_uni, color=speed, cmap="inferno", density=1.5, linewidth=0.8)
+    ax_str.set_title("Lineas de corriente")
+    ax_str.set_xlabel("x"); ax_str.set_ylabel("y"); ax_str.set_aspect("equal")
 
-# streamplot requiere malla uniforme — interpolar desde malla estirada a uniforme
-x_uni = np.linspace(xc_p[0], xc_p[-1], nx)
-y_uni = np.linspace(yc_p[0], yc_p[-1], ny)
-interp_u = RegularGridInterpolator((yc_p, xc_p), u_on_p, method="linear")
-interp_v = RegularGridInterpolator((yc_p, xc_p), v_on_p, method="linear")
-Xu, Yu = np.meshgrid(x_uni, y_uni)
-pts = np.stack([Yu.ravel(), Xu.ravel()], axis=1)
-u_uni = interp_u(pts).reshape(ny, nx)
-v_uni = interp_v(pts).reshape(ny, nx)
+    save_path = os.path.join(case_dir, "validation.png")
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Figura guardada: {save_path}")
+    return df_u
 
-speed = np.sqrt(u_uni**2 + v_uni**2)
-ax_str.streamplot(x_uni, y_uni, u_uni, v_uni,
-                  color=speed, cmap="inferno", density=1.5, linewidth=0.8)
-ax_str.set_title("Líneas de corriente")
-ax_str.set_xlabel("x"); ax_str.set_ylabel("y")
-ax_str.set_aspect("equal")
 
-save_path = os.path.join(OUTPUT_DIR, "validation.png")
-plt.savefig(save_path, dpi=150, bbox_inches="tight")
-print(f"\n📊 Figura guardada en: {save_path}")
-plt.show()
+def plot_multi_re_u(output_dir, re_cases, u_profiles):
+    plt.figure(figsize=(7, 6))
+    for re_value, df_u in zip(re_cases, u_profiles):
+        plt.plot(df_u["u_norm"], df_u["y_norm"], linewidth=1.8, label=f"Solver Re={re_value}")
+        ghia_col = ghia_column_for_re(re_value)
+        ghia_u = np.column_stack([ghia_u_table[:, 0], ghia_u_table[:, 1 + ghia_col]])
+        plt.scatter(ghia_u[:, 1], ghia_u[:, 0], s=14, alpha=0.8)
+    plt.xlabel("u / U_lid")
+    plt.ylabel("y / H")
+    plt.title("Comparacion de perfiles u(x=L/2,y)")
+    plt.grid(True, alpha=0.3)
+    plt.legend(fontsize=8)
+    save_path = os.path.join(output_dir, "validation_all_re_u.png")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"Figura global guardada: {save_path}")
+
+
+def main():
+    print(f"Buscando resultados en: {OUTPUT_DIR}")
+    re_cases = list_reynolds_cases(OUTPUT_DIR)
+    if not re_cases:
+        raise RuntimeError("No se encontraron carpetas output/Re_<N>.")
+
+    print(f"Casos detectados: {re_cases}")
+    u_profiles = []
+    for re_value in re_cases:
+        case_dir = os.path.join(OUTPUT_DIR, f"Re_{re_value}")
+        u_profiles.append(plot_case(re_value, case_dir))
+
+    plot_multi_re_u(OUTPUT_DIR, re_cases, u_profiles)
+
+
+if __name__ == "__main__":
+    main()

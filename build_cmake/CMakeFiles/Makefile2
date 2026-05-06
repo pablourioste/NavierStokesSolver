@@ -45,10 +45,10 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /snap/cmake/1530/bin/cmake
+CMAKE_COMMAND = /snap/cmake/1531/bin/cmake
 
 # The command to remove a file.
-RM = /snap/cmake/1530/bin/cmake -E rm -f
+RM = /snap/cmake/1531/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
@@ -64,11 +64,13 @@ CMAKE_BINARY_DIR = /home/pablo_urioste/projects/NavierStokesSolver/build_cmake
 
 # The main recursive "all" target.
 all: CMakeFiles/mesh_gen.dir/all
+all: CMakeFiles/reynolds_sweep.dir/all
 all: CMakeFiles/operator_verify.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
 codegen: CMakeFiles/mesh_gen.dir/codegen
+codegen: CMakeFiles/reynolds_sweep.dir/codegen
 codegen: CMakeFiles/operator_verify.dir/codegen
 .PHONY : codegen
 
@@ -78,6 +80,7 @@ preinstall:
 
 # The main recursive "clean" target.
 clean: CMakeFiles/mesh_gen.dir/clean
+clean: CMakeFiles/reynolds_sweep.dir/clean
 clean: CMakeFiles/operator_verify.dir/clean
 .PHONY : clean
 
@@ -112,6 +115,38 @@ CMakeFiles/mesh_gen.dir/codegen:
 CMakeFiles/mesh_gen.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mesh_gen.dir/build.make CMakeFiles/mesh_gen.dir/clean
 .PHONY : CMakeFiles/mesh_gen.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/reynolds_sweep.dir
+
+# All Build rule for target.
+CMakeFiles/reynolds_sweep.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reynolds_sweep.dir/build.make CMakeFiles/reynolds_sweep.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reynolds_sweep.dir/build.make CMakeFiles/reynolds_sweep.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=21,22,23,24,25,26,27,28,29,30 "Built target reynolds_sweep"
+.PHONY : CMakeFiles/reynolds_sweep.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/reynolds_sweep.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles 10
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/reynolds_sweep.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles 0
+.PHONY : CMakeFiles/reynolds_sweep.dir/rule
+
+# Convenience name for target.
+reynolds_sweep: CMakeFiles/reynolds_sweep.dir/rule
+.PHONY : reynolds_sweep
+
+# codegen rule for target.
+CMakeFiles/reynolds_sweep.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reynolds_sweep.dir/build.make CMakeFiles/reynolds_sweep.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles --progress-num=21,22,23,24,25,26,27,28,29,30 "Finished codegen for target reynolds_sweep"
+.PHONY : CMakeFiles/reynolds_sweep.dir/codegen
+
+# clean rule for target.
+CMakeFiles/reynolds_sweep.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/reynolds_sweep.dir/build.make CMakeFiles/reynolds_sweep.dir/clean
+.PHONY : CMakeFiles/reynolds_sweep.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/operator_verify.dir

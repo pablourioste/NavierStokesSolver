@@ -33,7 +33,7 @@ MeshConfig::MeshConfig()
     U_lid(1.0),
     dt(1e-3),
     rho(1.0),
-    max_steps(50000),
+    max_steps(100000),
     ss_tol(1e-6),
 
     // 2. Inicializamos Posiciones (std::pair)

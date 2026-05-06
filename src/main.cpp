@@ -8,11 +8,43 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
+#include <vector>
+#include <sstream>
+#include <filesystem>
+#include <iomanip>
 
 using namespace std;
 
 const string INPUT_DIR  = "input/";
 const string OUTPUT_DIR = "output/";
+
+static std::vector<int> read_reynolds_cases(const std::string& filename) {
+    std::vector<int> cases;
+    std::ifstream file(filename);
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            for (char& c : line) {
+                if (c == ',') c = ' ';
+            }
+            std::stringstream ss(line);
+            int re_val = 0;
+            while (ss >> re_val) {
+                if (re_val > 0) cases.push_back(re_val);
+            }
+        }
+    }
+
+    if (cases.empty()) {
+        for (int re = 100; re <= 1000; re += 100) {
+            cases.push_back(re);
+        }
+        std::cout << "No se encontraron Reynolds en '" << filename
+                  << "'. Usando bateria por defecto: 100..1000 (paso 100)\n";
+    }
+    return cases;
+}
 
 int main() {
 
@@ -28,7 +60,7 @@ int main() {
     GridData uMesh = myConfig.generate_u_mesh(pMesh);
     GridData vMesh = myConfig.generate_v_mesh(pMesh);
 
-    myConfig.define_boundaries(pMesh, INPUT_DIR + "boundaries_lid_cavity.txt");
+    myConfig.define_boundaries(pMesh, INPUT_DIR + "boundaries.txt");
     myConfig.build_connectivity(pMesh);
     myConfig.build_connectivity(uMesh);
     myConfig.build_connectivity(vMesh);
@@ -58,74 +90,14 @@ int main() {
     GS GS_solver;
     SOR SOR_solver;
 
-    // Simulation parameters (all read from input/sim_params.txt):
-    double Re        = myConfig.Re;
+    // Simulation parameters (base from input/sim_params.txt):
     double U_lid     = myConfig.U_lid;
     double dt        = myConfig.dt;
     double rho       = myConfig.rho;
     int    max_steps = myConfig.max_steps;
     double ss_tol    = myConfig.ss_tol;
-    double nu        = U_lid * myConfig.L_domain / Re;  // derived: nu = U*L/Re
-
-    cout << "Re = " << Re << "  U_lid = " << U_lid << "  nu = " << nu
-         << "  dt = " << dt << "  max_steps = " << max_steps << "\n";
-
-    // Initial velocity fields (zero everywhere):
-    Vector u_star(uMesh.num_active_nodes, 0.0);
-    Vector v_star(vMesh.num_active_nodes, 0.0);
-    Vector p_sol(pMesh.num_active_nodes, 0.0);
-    // Pre-allocated outside loop — avoids N*M heap allocation per step
-    Vector u_old(uMesh.num_active_nodes, 0.0);
-    Vector v_old(vMesh.num_active_nodes, 0.0);
-    Vector b_rhs(pMesh.num_active_nodes, 0.0);
-
-    // Momentum solver — BCs read from boundaries_lid_cavity.txt via pMesh.bound_*
-    MomentumSolver momentum(pMesh, uMesh, vMesh, nu);
-    momentum.applyBoundaryConditions(u_star, v_star);
-
-    // =========================================================================
-    // 3. SOLVER
-    // =========================================================================
-
-    for (int step = 0; step < max_steps; ++step) {
-
-        u_old = u_star;
-        v_old = v_star;
-
-        // A. Predictor step: advance u*, v* with convection + diffusion
-        momentum.advance(u_star, v_star, dt);
-
-        poisson.setVelocityFields(u_star, v_star);
-
-        b_rhs = poisson.computeRHS(dt, rho);
-        b_rhs[0] = 0.0;
-
-        // D. Pressure solve with warm-start from previous step
-       
-        p_sol = CG_solver.solve(A, b_rhs, p_sol);   // CG    — ~7s
-        //p_sol = PCG_solver.solve(A, b_rhs, p_sol);  // PCG   — ~7s (slightly faster on stretched meshes)
-        //p_sol = GS_solver.solve(A, b_rhs, p_sol);   // GS    — ~6 min (slow but correct)
-        //p_sol = SOR_solver.solve(A, b_rhs, p_sol);  // SOR ω=1.5 — between GS and CG
-
-        // E. Project/correct velocities (results written directly into u_star/v_star)
-        poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
-
-        // Re-enforce BCs after projection
-        momentum.applyBoundaryConditions(u_star, v_star);
-
-        // Steady-state check: ||u^{n+1} - u^n||_inf / dt < ss_tol
-        if (step % 100 == 0) {
-            double du_max = 0.0;
-            for (int i = 0; i < (int)u_star.size(); ++i)
-                du_max = std::max(du_max, std::abs(u_star[i] - u_old[i]));
-            double ss_err = du_max / dt;
-            cout << "Step " << step << "  ||du||_inf/dt = " << ss_err << "\n";
-            if (step > 0 && ss_err < ss_tol) {
-                cout << "Steady state reached at step " << step << "\n";
-                break;
-            }
-        }
-    }
+    auto reynolds_cases = read_reynolds_cases(INPUT_DIR + "reynolds_cases.txt");
+    std::filesystem::create_directories(OUTPUT_DIR);
 
 
     // =========================================================================
@@ -175,9 +147,61 @@ int main() {
         std::cout << "Field '" << fieldName << "' exported to: " << filename << "\n";
     };
 
-    writeFieldVTK(pMesh, p_sol,   "pressure",   OUTPUT_DIR + "pressure.vtk");
-    writeFieldVTK(uMesh, u_star, "u_velocity", OUTPUT_DIR + "u_velocity.vtk");
-    writeFieldVTK(vMesh, v_star, "v_velocity", OUTPUT_DIR + "v_velocity.vtk");
+    for (int Re : reynolds_cases) {
+        double nu = U_lid * myConfig.L_domain / static_cast<double>(Re);  // nu = U*L/Re
+        cout << "\n============================================================\n";
+        cout << "Running case Re = " << Re
+             << "  U_lid = " << U_lid
+             << "  nu = " << nu
+             << "  dt = " << dt
+             << "  max_steps = " << max_steps << "\n";
+
+        // Initial fields per Reynolds case
+        Vector u_star(uMesh.num_active_nodes, 0.0);
+        Vector v_star(vMesh.num_active_nodes, 0.0);
+        Vector p_sol(pMesh.num_active_nodes, 0.0);
+        Vector u_old(uMesh.num_active_nodes, 0.0);
+        Vector b_rhs(pMesh.num_active_nodes, 0.0);
+
+        MomentumSolver momentum(pMesh, uMesh, vMesh, nu);
+        momentum.applyBoundaryConditions(u_star, v_star);
+
+        for (int step = 0; step < max_steps; ++step) {
+            u_old = u_star;
+
+            momentum.advance(u_star, v_star, dt);
+            poisson.setVelocityFields(u_star, v_star);
+
+            b_rhs = poisson.computeRHS(dt, rho);
+            b_rhs[0] = 0.0;
+
+            p_sol = CG_solver.solve(A, b_rhs, p_sol);
+            poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
+            momentum.applyBoundaryConditions(u_star, v_star);
+
+            if (step % 100 == 0) {
+                double du_max = 0.0;
+                for (int i = 0; i < (int)u_star.size(); ++i)
+                    du_max = std::max(du_max, std::abs(u_star[i] - u_old[i]));
+                double ss_err = du_max / dt;
+                cout << "Re=" << Re << "  Step " << step
+                     << "  ||du||_inf/dt = " << ss_err << "\n";
+                if (step > 0 && ss_err < ss_tol) {
+                    cout << "Steady state reached at step " << step
+                         << " for Re=" << Re << "\n";
+                    break;
+                }
+            }
+        }
+
+        std::ostringstream re_dir;
+        re_dir << OUTPUT_DIR << "Re_" << Re;
+        std::filesystem::create_directories(re_dir.str());
+        const std::string case_dir = re_dir.str() + "/";
+
+        writeFieldVTK(pMesh, p_sol,   "pressure",   case_dir + "pressure.vtk");
+        writeFieldVTK(uMesh, u_star,  "u_velocity", case_dir + "u_velocity.vtk");
+        writeFieldVTK(vMesh, v_star,  "v_velocity", case_dir + "v_velocity.vtk");
 
     // =========================================================================
     // 5. VALIDATION — Ghia et al. (1982) benchmark, Re = 100
@@ -187,7 +211,7 @@ int main() {
     //    Ghia reference data normalised: y/H, u/U_lid  |  x/L, v/U_lid
     //    Make sure Re = U_lid*L/nu = 100 (set nu = L/100 in data.txt)
     // =========================================================================
-    {
+        {
         const Vector& u_final = u_star;
         const Vector& v_final = v_star;
 
@@ -216,7 +240,7 @@ int main() {
 
         // --- u(y) along x = L/2 ---
         {
-            std::ofstream f(OUTPUT_DIR + "centerline_u.csv");
+            std::ofstream f(case_dir + "centerline_u.csv");
             f << "y,y_norm,u,u_norm\n";
             for (int j = 0; j < Mu; ++j) {
                 int idx = j * Nu + ic_u;
@@ -228,12 +252,12 @@ int main() {
                   << u_val             // already normalised if U_lid=1
                   << "\n";
             }
-            std::cout << "Validation: u(y) centreline -> " << OUTPUT_DIR << "centerline_u.csv\n";
+            std::cout << "Validation: u(y) centreline -> " << case_dir << "centerline_u.csv\n";
         }
 
         // --- v(x) along y = H/2 ---
         {
-            std::ofstream f(OUTPUT_DIR + "centerline_v.csv");
+            std::ofstream f(case_dir + "centerline_v.csv");
             f << "x,x_norm,v,v_norm\n";
             for (int i = 0; i < Nv; ++i) {
                 int idx = jc_v * Nv + i;
@@ -245,7 +269,7 @@ int main() {
                   << v_val
                   << "\n";
             }
-            std::cout << "Validation: v(x) centreline -> " << OUTPUT_DIR << "centerline_v.csv\n";
+            std::cout << "Validation: v(x) centreline -> " << case_dir << "centerline_v.csv\n";
         }
 
         // --- Ghia et al. (1982) reference — selected Re column ---
@@ -257,7 +281,7 @@ int main() {
         {   // find nearest Re in list
             double best_err = 1e18;
             for (int c = 0; c < ghia_ncols; ++c) {
-                double err = std::abs(Re - ghia_re_list[c]);
+                double err = std::abs(static_cast<double>(Re) - ghia_re_list[c]);
                 if (err < best_err) { best_err = err; ghia_col = c; }
             }
         }
@@ -312,7 +336,8 @@ int main() {
         };
         for (auto& row : ghia_v_table)
             std::cout << row[0] << "   " << row[1 + ghia_col] << "\n";
-    }
+        }
+    } // end Reynolds loop
 
     //run_mesh_inspector(myConfig, pMesh, uMesh, vMesh);
 

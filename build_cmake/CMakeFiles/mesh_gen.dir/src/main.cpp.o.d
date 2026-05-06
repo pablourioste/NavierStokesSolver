@@ -1,7 +1,7 @@
 CMakeFiles/mesh_gen.dir/src/main.cpp.o: \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/main.cpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/main.cpp \
  /usr/include/stdc-predef.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/Mesh_config.h \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/Mesh_config.h \
  /usr/include/c++/13/vector /usr/include/c++/13/bits/requires_hosted.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/os_defines.h \
@@ -128,17 +128,17 @@ CMakeFiles/mesh_gen.dir/src/main.cpp.o: \
  /usr/include/c++/13/bits/charconv.h \
  /usr/include/c++/13/bits/basic_string.tcc /usr/include/c++/13/utility \
  /usr/include/c++/13/bits/stl_relops.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/PressurePoissonSystem.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/PressurePoissonSystem.hpp \
  /usr/include/c++/13/stdexcept /usr/include/c++/13/exception \
  /usr/include/c++/13/bits/exception_ptr.h \
  /usr/include/c++/13/bits/cxxabi_init_exception.h \
  /usr/include/c++/13/typeinfo /usr/include/c++/13/bits/nested_exception.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/solver/sparse/solver_class_sparse.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/../PressurePoissonSystem.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/MomentumSolver.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/operators/DiffusionOperator.hpp \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mesh/Mesh_config.h \
- /home/pablo_urioste/projects/NavierStokesSolver/Mesh_creation/src/mainUtils.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/solver/sparse/solver_class_sparse.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/../PressurePoissonSystem.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/MomentumSolver.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/operators/DiffusionOperator.hpp \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mesh/Mesh_config.h \
+ /home/pablo_urioste/projects/NavierStokesSolver/src/mainUtils.hpp \
  /usr/include/c++/13/iostream /usr/include/c++/13/ostream \
  /usr/include/c++/13/ios /usr/include/c++/13/bits/ios_base.h \
  /usr/include/c++/13/ext/atomicity.h \
@@ -204,4 +204,25 @@ CMakeFiles/mesh_gen.dir/src/main.cpp.o: \
  /usr/include/c++/13/tr1/modified_bessel_func.tcc \
  /usr/include/c++/13/tr1/poly_hermite.tcc \
  /usr/include/c++/13/tr1/poly_laguerre.tcc \
- /usr/include/c++/13/tr1/riemann_zeta.tcc
+ /usr/include/c++/13/tr1/riemann_zeta.tcc /usr/include/c++/13/sstream \
+ /usr/include/c++/13/bits/sstream.tcc /usr/include/c++/13/filesystem \
+ /usr/include/c++/13/bits/fs_fwd.h /usr/include/c++/13/cstdint \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+ /usr/include/x86_64-linux-gnu/bits/stdint-least.h \
+ /usr/include/c++/13/bits/chrono.h /usr/include/c++/13/ratio \
+ /usr/include/c++/13/ctime /usr/include/c++/13/bits/parse_numbers.h \
+ /usr/include/c++/13/bits/fs_path.h /usr/include/c++/13/locale \
+ /usr/include/c++/13/bits/locale_facets_nonio.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/time_members.h \
+ /usr/include/x86_64-linux-gnu/c++/13/bits/messages_members.h \
+ /usr/include/libintl.h /usr/include/c++/13/bits/locale_facets_nonio.tcc \
+ /usr/include/c++/13/bits/locale_conv.h /usr/include/c++/13/iomanip \
+ /usr/include/c++/13/bits/quoted_string.h /usr/include/c++/13/codecvt \
+ /usr/include/c++/13/ext/concurrence.h \
+ /usr/include/c++/13/bits/shared_ptr.h \
+ /usr/include/c++/13/bits/shared_ptr_base.h \
+ /usr/include/c++/13/bits/allocated_ptr.h \
+ /usr/include/c++/13/bits/unique_ptr.h \
+ /usr/include/c++/13/ext/aligned_buffer.h \
+ /usr/include/c++/13/bits/fs_dir.h /usr/include/c++/13/bits/fs_ops.h

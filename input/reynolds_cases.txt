@@ -1,0 +1,3 @@
+# Lista de Reynolds a simular (separados por espacio o coma)
+# Casos solicitados para barrido LDC
+3200
