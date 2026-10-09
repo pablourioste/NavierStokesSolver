@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

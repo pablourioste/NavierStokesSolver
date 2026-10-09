@@ -1,0 +1,12 @@
+# =============================================================================
+# Temperature boundary conditions — Differentially Heated Cavity (DHC)
+# Format: BOCO_NAME  FACE  IDX_START  IDX_END  TYPE             VALUE
+#   WALL_ISOTHERMAL  -> Dirichlet temperature (theta = VALUE)
+#   WALL_ADIABATIC   -> zero heat flux (d(theta)/dn = 0)
+# Non-dimensional: hot wall theta = 1, cold wall theta = 0.
+# Faces not listed here default to adiabatic.
+# =============================================================================
+hot_west    WEST    0   9999   WALL_ISOTHERMAL   1.0
+cold_east   EAST    0   9999   WALL_ISOTHERMAL   0.0
+top         NORTH   0   9999   WALL_ADIABATIC    0.0
+bottom      SOUTH   0   9999   WALL_ADIABATIC    0.0

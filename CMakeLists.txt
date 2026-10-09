@@ -20,6 +20,7 @@ set(SOLVER_SOURCES
     src/PressurePoissonSystem.cpp
     src/solver/sparse/solver_sparse.cpp
     src/MomentumSolver.cpp
+    src/EnergySolver.cpp
 )
 
 set(MAIN_SOURCE

@@ -1,5 +1,0 @@
-/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles/mesh_gen.dir
-/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles/reynolds_sweep.dir
-/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles/operator_verify.dir
-/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles/edit_cache.dir
-/home/pablo_urioste/projects/NavierStokesSolver/build_cmake/CMakeFiles/rebuild_cache.dir

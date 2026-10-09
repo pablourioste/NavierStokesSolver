@@ -2,6 +2,8 @@
 #include "PressurePoissonSystem.hpp"
 #include "solver/sparse/solver_class_sparse.hpp"
 #include "MomentumSolver.hpp"
+#include "EnergySolver.hpp"
+#include "Buoyancy.hpp"
 #include "mainUtils.hpp"
 #include <iostream>
 #include <fstream>
@@ -42,6 +44,31 @@ static std::vector<int> read_reynolds_cases(const std::string& filename) {
         }
         std::cout << "No se encontraron Reynolds en '" << filename
                   << "'. Usando bateria por defecto: 100..1000 (paso 100)\n";
+    }
+    return cases;
+}
+
+// Reads a list of Rayleigh numbers (doubles, e.g. 1e5) for the Differentially
+// Heated Cavity sweep. Falls back to the de Vahl Davis benchmark set.
+static std::vector<double> read_rayleigh_cases(const std::string& filename) {
+    std::vector<double> cases;
+    std::ifstream file(filename);
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            for (char& c : line) if (c == ',') c = ' ';
+            std::stringstream ss(line);
+            double ra = 0.0;
+            while (ss >> ra) {
+                if (ra > 0.0) cases.push_back(ra);
+            }
+        }
+    }
+    if (cases.empty()) {
+        cases = {1e3, 1e4, 1e5, 1e6};
+        std::cout << "No se encontraron Rayleigh en '" << filename
+                  << "'. Usando bateria por defecto: 1e3,1e4,1e5,1e6\n";
     }
     return cases;
 }
@@ -96,8 +123,23 @@ int main() {
     double rho       = myConfig.rho;
     int    max_steps = myConfig.max_steps;
     double ss_tol    = myConfig.ss_tol;
-    auto reynolds_cases = read_reynolds_cases(INPUT_DIR + "reynolds_cases.txt");
     std::filesystem::create_directories(OUTPUT_DIR);
+
+    // --- Problem selection: lid-driven cavity vs differentially heated cavity ---
+    const bool   energy_on = (myConfig.solve_energy != 0);
+    const double Pr        = myConfig.Pr;
+
+    // Unified case list: Reynolds numbers (lid) or Rayleigh numbers (heated).
+    std::vector<double> case_values;
+    if (energy_on) {
+        case_values = read_rayleigh_cases(INPUT_DIR + "rayleigh_cases.txt");
+        myConfig.define_temperature_boundaries(pMesh, INPUT_DIR + "boundaries_T.txt");
+        std::cout << "\n*** Energy equation ON — Differentially Heated Cavity "
+                  << "(Ra sweep, Pr = " << Pr << ") ***\n";
+    } else {
+        for (int re : read_reynolds_cases(INPUT_DIR + "reynolds_cases.txt"))
+            case_values.push_back(static_cast<double>(re));
+    }
 
 
     // =========================================================================
@@ -147,16 +189,25 @@ int main() {
         std::cout << "Field '" << fieldName << "' exported to: " << filename << "\n";
     };
 
-    for (int Re : reynolds_cases) {
-        double nu = U_lid * myConfig.L_domain / static_cast<double>(Re);  // nu = U*L/Re
-        cout << "\n============================================================\n";
-        cout << "Running case Re = " << Re
-             << "  U_lid = " << U_lid
-             << "  nu = " << nu
-             << "  dt = " << dt
-             << "  max_steps = " << max_steps << "\n";
+    for (double caseVal : case_values) {
+        // Lid mode: caseVal = Re, nu = U*L/Re. Heated mode: caseVal = Ra, nu = Pr.
+        const int    Re = energy_on ? 0 : static_cast<int>(std::lround(caseVal));
+        const double Ra = energy_on ? caseVal : 0.0;
+        const double nu = energy_on ? Pr : (U_lid * myConfig.L_domain / caseVal);
 
-        // Initial fields per Reynolds case
+        cout << "\n============================================================\n";
+        if (energy_on)
+            cout << "Running case Ra = " << Ra << "  Pr = " << Pr
+                 << "  nu(=Pr) = " << nu << "  dt = " << dt
+                 << "  max_steps = " << max_steps << "\n";
+        else
+            cout << "Running case Re = " << Re
+                 << "  U_lid = " << U_lid
+                 << "  nu = " << nu
+                 << "  dt = " << dt
+                 << "  max_steps = " << max_steps << "\n";
+
+        // Initial fields per case
         Vector u_star(uMesh.num_active_nodes, 0.0);
         Vector v_star(vMesh.num_active_nodes, 0.0);
         Vector p_sol(pMesh.num_active_nodes, 0.0);
@@ -166,10 +217,17 @@ int main() {
         MomentumSolver momentum(pMesh, uMesh, vMesh, nu);
         momentum.applyBoundaryConditions(u_star, v_star);
 
+        // Energy field (heated cavity only). theta initialised to 0.5 (mid).
+        EnergySolver energy(pMesh, uMesh, vMesh, /*alpha=*/1.0,
+                            ConvectionScheme::UPWIND);
+        Vector T(pMesh.num_active_nodes, 0.5);
+
         for (int step = 0; step < max_steps; ++step) {
             u_old = u_star;
 
             momentum.advance(u_star, v_star, dt);
+            if (energy_on)
+                addBuoyancy(T, v_star, dt, Ra, Pr, pMesh, vMesh);  // inject into v*
             poisson.setVelocityFields(u_star, v_star);
 
             b_rhs = poisson.computeRHS(dt, rho);
@@ -179,29 +237,37 @@ int main() {
             poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
             momentum.applyBoundaryConditions(u_star, v_star);
 
+            if (energy_on)
+                energy.advance(T, u_star, v_star, dt);  // transport theta
+
             if (step % 100 == 0) {
                 double du_max = 0.0;
                 for (int i = 0; i < (int)u_star.size(); ++i)
                     du_max = std::max(du_max, std::abs(u_star[i] - u_old[i]));
                 double ss_err = du_max / dt;
-                cout << "Re=" << Re << "  Step " << step
+                const std::string tag = energy_on ? ("Ra=" + std::to_string((long long)Ra))
+                                                  : ("Re=" + std::to_string(Re));
+                cout << tag << "  Step " << step
                      << "  ||du||_inf/dt = " << ss_err << "\n";
                 if (step > 0 && ss_err < ss_tol) {
                     cout << "Steady state reached at step " << step
-                         << " for Re=" << Re << "\n";
+                         << " for " << tag << "\n";
                     break;
                 }
             }
         }
 
         std::ostringstream re_dir;
-        re_dir << OUTPUT_DIR << "Re_" << Re;
+        if (energy_on) re_dir << OUTPUT_DIR << "Ra_" << (long long)Ra;
+        else           re_dir << OUTPUT_DIR << "Re_" << Re;
         std::filesystem::create_directories(re_dir.str());
         const std::string case_dir = re_dir.str() + "/";
 
         writeFieldVTK(pMesh, p_sol,   "pressure",   case_dir + "pressure.vtk");
         writeFieldVTK(uMesh, u_star,  "u_velocity", case_dir + "u_velocity.vtk");
         writeFieldVTK(vMesh, v_star,  "v_velocity", case_dir + "v_velocity.vtk");
+        if (energy_on)
+            writeFieldVTK(pMesh, T,   "temperature", case_dir + "temperature.vtk");
 
     // =========================================================================
     // 5. VALIDATION — Ghia et al. (1982) benchmark, Re = 100
@@ -211,7 +277,7 @@ int main() {
     //    Ghia reference data normalised: y/H, u/U_lid  |  x/L, v/U_lid
     //    Make sure Re = U_lid*L/nu = 100 (set nu = L/100 in data.txt)
     // =========================================================================
-        {
+        if (!energy_on) {
         const Vector& u_final = u_star;
         const Vector& v_final = v_star;
 
@@ -336,8 +402,64 @@ int main() {
         };
         for (auto& row : ghia_v_table)
             std::cout << row[0] << "   " << row[1 + ghia_col] << "\n";
+        }  // end lid-cavity (Ghia) validation
+        else {
+        // =====================================================================
+        // VALIDATION — de Vahl Davis (1983) Differentially Heated Cavity
+        //   u_max on the vertical mid-plane (x = L/2)
+        //   v_max on the horizontal mid-plane (y = H/2)
+        //   average Nusselt number on the hot (west) wall
+        // =====================================================================
+        const int Nu_ = uMesh.N_cells_x, Mu_ = uMesh.M_cells_y;
+        const int Nv_ = vMesh.N_cells_x, Mv_ = vMesh.M_cells_y;
+
+        // u_max along the vertical centreline x = L/2
+        const double x_mid = myConfig.L_domain * 0.5;
+        int ic_u = 0; double best = 1e30;
+        for (int k = 0; k < Nu_; ++k) {
+            double d = std::abs(uMesh.cells[k].x - x_mid);
+            if (d < best) { best = d; ic_u = k; }
         }
-    } // end Reynolds loop
+        double u_max = 0.0;
+        for (int j = 0; j < Mu_; ++j)
+            u_max = std::max(u_max, std::abs(u_star[j * Nu_ + ic_u]));
+
+        // v_max along the horizontal centreline y = H/2
+        const double y_mid = myConfig.H_domain * 0.5;
+        int jc_v = 0; best = 1e30;
+        for (int l = 0; l < Mv_; ++l) {
+            double d = std::abs(vMesh.cells[l * Nv_].y - y_mid);
+            if (d < best) { best = d; jc_v = l; }
+        }
+        double v_max = 0.0;
+        for (int i = 0; i < Nv_; ++i)
+            v_max = std::max(v_max, std::abs(v_star[jc_v * Nv_ + i]));
+
+        // Average Nusselt on the hot west wall:  Nu = (1/H) * sum_j q_j * dy_j
+        // local flux q_j = (theta_wall - theta_P) / (x_P - x_wall)
+        const int N = pMesh.N_cells_x;
+        double Nu_avg = 0.0;
+        for (int j = 1; j <= pMesh.M_cells_y; ++j) {
+            const int    k     = (j - 1) * N + 0;            // P cell (i=1, j)
+            const double Twall = pMesh.bound_west_T.empty() ? 1.0
+                                                            : pMesh.bound_west_T[j-1].value;
+            const double dist  = pMesh.cells[k].x - pMesh.xvc[0];
+            const double dy    = pMesh.yvc[j] - pMesh.yvc[j-1];
+            Nu_avg += (Twall - T[k]) / dist * dy;
+        }
+        Nu_avg /= myConfig.H_domain;
+
+        std::cout << "\n--- de Vahl Davis benchmark  Ra=" << Ra << " ---\n";
+        std::cout << "  u_max (x=L/2) = " << u_max << "\n";
+        std::cout << "  v_max (y=H/2) = " << v_max << "\n";
+        std::cout << "  Nu_avg (hot wall) = " << Nu_avg << "\n";
+
+        std::ofstream f(case_dir + "dhc_metrics.csv");
+        f << "Ra,Pr,u_max,v_max,Nu_avg\n"
+          << Ra << "," << Pr << "," << u_max << "," << v_max << "," << Nu_avg << "\n";
+        std::cout << "Validation: metrics -> " << case_dir << "dhc_metrics.csv\n";
+        }  // end heated-cavity validation
+    } // end case loop
 
     //run_mesh_inspector(myConfig, pMesh, uMesh, vMesh);
 

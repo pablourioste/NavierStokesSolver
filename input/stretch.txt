@@ -11,8 +11,8 @@ beta_y_center = 0.0
 # Número de celdas
 # Zona única: todas las celdas en west/south.
 # center y east = 0 (longitud cero, no se copian a la malla).
-N_cells_west    = 150
-M_cells_west    = 150
+N_cells_west    = 120
+M_cells_west    = 120
 N_cells_center  = 0
 M_cells_center  = 0
 N_cells_east    = 0

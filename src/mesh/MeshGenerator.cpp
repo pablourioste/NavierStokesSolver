@@ -33,8 +33,10 @@ MeshConfig::MeshConfig()
     U_lid(1.0),
     dt(1e-3),
     rho(1.0),
-    max_steps(100000),
+    max_steps(1000000),
     ss_tol(1e-6),
+    solve_energy(0),
+    Pr(0.71),
 
     // 2. Inicializamos Posiciones (std::pair)
     // NW = North-West: min x, max y | NE = North-East: max x, max y
@@ -727,6 +729,10 @@ void MeshConfig::update_parameter(const std::string& key, const std::string& val
         max_steps = stoi(value);
     } else if (key == "ss_tol") {
         ss_tol = stod(value);
+    } else if (key == "solve_energy") {
+        solve_energy = stoi(value);
+    } else if (key == "Pr") {
+        Pr = stod(value);
     }
     // Para std::pair, es más fácil leerlos como componentes _x y _y
     else if (key == "node_NW_x") {
@@ -900,6 +906,8 @@ BCType string_to_bc_enum(const string& s) {
     if (s == "OUTLET") return OUTLET;
     if (s == "WALL") return WALL_ADIABATIC; // Por defecto
     if (s == "WALL_FIXED_VALUE") return WALL_FIXED_VALUE;
+    if (s == "WALL_ADIABATIC") return WALL_ADIABATIC;
+    if (s == "WALL_ISOTHERMAL") return WALL_ISOTHERMAL;
     if (s == "SYMMETRY") return SYMMETRY;
     return UNDEFINED;
 }
@@ -967,6 +975,78 @@ void MeshConfig::define_boundaries(GridData& mesh, const std::string& filename) 
             }
             cout << " -> Boco [" << boco_name << "] " << type_str << " en " << face_dir
                  << " [" << idx_start << "-" << idx_end << "]" << endl;
+        } else {
+            cerr << "Error: Direccion desconocida " << face_dir << endl;
+        }
+    }
+    file.close();
+}
+
+// ---------------------------------------------------------------------------
+// define_temperature_boundaries
+//
+// Populates mesh.bound_*_T with temperature BCs, parallel to the velocity BC
+// lists. Geometry (positions/areas) is copied from the existing bound_* lists;
+// only the BC type/value are overwritten from the file. Defaults to adiabatic
+// for any face not mentioned. Same file format as boundaries.txt.
+// ---------------------------------------------------------------------------
+void MeshConfig::define_temperature_boundaries(GridData& mesh, const std::string& filename) {
+    // 1. Initialise T-BC lists as adiabatic copies of the velocity-BC geometry.
+    auto init_adiabatic = [](const std::vector<BoundaryFace>& src,
+                             std::vector<BoundaryFace>& dst) {
+        dst = src;                       // copy face positions / areas / sizes
+        for (BoundaryFace& f : dst) {
+            f.type  = WALL_ADIABATIC;    // default: zero heat flux
+            f.value = 0.0;
+            f.boco  = "adiabatic";
+        }
+    };
+    init_adiabatic(mesh.bound_west,  mesh.bound_west_T);
+    init_adiabatic(mesh.bound_east,  mesh.bound_east_T);
+    init_adiabatic(mesh.bound_south, mesh.bound_south_T);
+    init_adiabatic(mesh.bound_north, mesh.bound_north_T);
+
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: No se pudo abrir " << filename
+             << " (condiciones de temperatura). Usando adiabatico por defecto." << endl;
+        return;
+    }
+
+    cout << "--- Cargando Condiciones de Temperatura desde " << filename << " ---" << endl;
+
+    string line;
+    while (getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+
+        stringstream ss(line);
+        string boco_name, face_dir, type_str;
+        int idx_start, idx_end;
+        ss >> boco_name >> face_dir >> idx_start >> idx_end >> type_str;
+        double val = 0.0;
+        ss >> val;
+
+        vector<BoundaryFace>* target_vec = nullptr;
+        int max_limit = 0;
+        if (face_dir == "WEST")       { target_vec = &mesh.bound_west_T;  max_limit = mesh.M_cells_y; }
+        else if (face_dir == "EAST")  { target_vec = &mesh.bound_east_T;  max_limit = mesh.M_cells_y; }
+        else if (face_dir == "SOUTH") { target_vec = &mesh.bound_south_T; max_limit = mesh.N_cells_x; }
+        else if (face_dir == "NORTH") { target_vec = &mesh.bound_north_T; max_limit = mesh.N_cells_x; }
+
+        if (target_vec) {
+            if (idx_end > max_limit) idx_end = max_limit;
+            if (idx_start < 0) idx_start = 0;
+
+            BCType type_enum = string_to_bc_enum(type_str);
+            for (int k = idx_start; k < idx_end; ++k) {
+                if (k < (int)target_vec->size()) {
+                    (*target_vec)[k].type  = type_enum;
+                    (*target_vec)[k].value = val;
+                    (*target_vec)[k].boco  = boco_name;
+                }
+            }
+            cout << " -> T-Boco [" << boco_name << "] " << type_str << " en " << face_dir
+                 << " [" << idx_start << "-" << idx_end << "] val=" << val << endl;
         } else {
             cerr << "Error: Direccion desconocida " << face_dir << endl;
         }

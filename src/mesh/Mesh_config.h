@@ -18,13 +18,14 @@ struct InternalCell {
 
 };
 // --- A. NUEVO ENUM PARA TIPOS DE FRONTERA ---
-enum BCType { 
-    WALL_ADIABATIC, 
-    WALL_FIXED_VALUE, 
-    INLET, 
-    OUTLET, 
-    SYMMETRY, 
-    UNDEFINED 
+enum BCType {
+    WALL_ADIABATIC,
+    WALL_FIXED_VALUE,
+    INLET,
+    OUTLET,
+    SYMMETRY,
+    WALL_ISOTHERMAL,   // Dirichlet temperature wall (T = value); energy equation only
+    UNDEFINED
 };
 
 struct BoundaryFace {
@@ -68,6 +69,15 @@ struct GridData {
     std::vector<BoundaryFace> bound_east;
     std::vector<BoundaryFace> bound_south;
     std::vector<BoundaryFace> bound_north;
+
+    // --- Temperature boundary conditions (energy equation only) ---
+    // Parallel to the velocity bound_* lists above, populated only when the
+    // energy equation is solved (MeshConfig::define_temperature_boundaries).
+    // Left empty for the lid-driven cavity, so velocity BCs are untouched.
+    std::vector<BoundaryFace> bound_west_T;
+    std::vector<BoundaryFace> bound_east_T;
+    std::vector<BoundaryFace> bound_south_T;
+    std::vector<BoundaryFace> bound_north_T;
     
     // Mapa auxiliar por si necesitas acceso rápido (opcional)
     int N_cells_x, M_cells_y;
@@ -98,6 +108,10 @@ public:
     int    max_steps; // Maximum number of time steps
     double ss_tol;    // Steady-state tolerance ||du||_inf / dt
 
+    // --- Energy equation / Boussinesq (Differentially Heated Cavity) ---
+    int    solve_energy; // 0 = momentum+pressure only (lid cavity); 1 = solve energy
+    double Pr;           // Prandtl number (momentum diffusion = Pr in Ra-Pr scaling)
+
     // --- Object Positioning on the grid ---
     std::pair<double, double> node_NW;
     std::pair<double, double> node_SE;
@@ -126,6 +140,11 @@ public:
     void get_sim_params(const std::string& filename);
 
     void define_boundaries(GridData& mesh, const std::string& filename);
+    // Populates the parallel bound_*_T temperature BC lists from a file with the
+    // same format as boundaries.txt (types WALL_ISOTHERMAL / WALL_ADIABATIC).
+    // Geometry is copied from the existing bound_* lists; must be called after
+    // generate_mesh(). Only needed when solve_energy == 1.
+    void define_temperature_boundaries(GridData& mesh, const std::string& filename);
     GridData generate_mesh() const;
     GridData generate_u_mesh(const GridData& mesh) const;
     GridData generate_v_mesh(const GridData& mesh) const;
