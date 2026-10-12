@@ -4,6 +4,7 @@
 #include "MomentumSolver.hpp"
 #include "EnergySolver.hpp"
 #include "Buoyancy.hpp"
+#include "postprocessing/ObstacleForces.hpp"
 #include "mainUtils.hpp"
 #include <iostream>
 #include <fstream>
@@ -17,8 +18,51 @@
 
 using namespace std;
 
-const string INPUT_DIR  = "input/";
 const string OUTPUT_DIR = "output/";
+
+// Which physical problem main() solves this run — selected via
+// input/scenario.txt. Additive: LID_DRIVEN_CAVITY and
+// DIFFERENTIALLY_HEATED_CAVITY preserve every code path exactly as before
+// this enum existed (see energy_on derivation below); SQUARE_CYLINDER is the
+// new third branch.
+enum class Scenario { LID_DRIVEN_CAVITY, DIFFERENTIALLY_HEATED_CAVITY, SQUARE_CYLINDER };
+
+// Reads input/scenario.txt (a single "scenario = <name>" line) BEFORE any
+// other config, since every other input file now lives under
+// input/<scenario>/. Falls back to "lid_driven_cavity" if the file is
+// missing, preserving the historical default behavior.
+static std::string read_scenario_name(const std::string& filename) {
+    std::ifstream file(filename);
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        std::stringstream ss(line);
+        std::string key, eq, val;
+        if (ss >> key >> eq >> val && key == "scenario") return val;
+    }
+    return "lid_driven_cavity";
+}
+
+// Reads the Square Cylinder's obstacle.txt ("key = value" lines) into the
+// 4 bounds mark_solid_block() needs. Returns false (bounds left at 0) if the
+// file is missing — only ever called for the SQUARE_CYLINDER scenario.
+static bool read_obstacle_bounds(const std::string& filename,
+                                  double& x0, double& x1, double& y0, double& y1) {
+    std::ifstream file(filename);
+    if (!file.is_open()) return false;
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        std::stringstream ss(line);
+        std::string key, eq; double val;
+        if (!(ss >> key >> eq >> val)) continue;
+        if (key == "obstacle_x0") x0 = val;
+        else if (key == "obstacle_x1") x1 = val;
+        else if (key == "obstacle_y0") y0 = val;
+        else if (key == "obstacle_y1") y1 = val;
+    }
+    return true;
+}
 
 static std::vector<int> read_reynolds_cases(const std::string& filename) {
     std::vector<int> cases;
@@ -76,6 +120,20 @@ static std::vector<double> read_rayleigh_cases(const std::string& filename) {
 int main() {
 
     // =========================================================================
+    // 0. SCENARIO SELECTION — read first, drives which input/<scenario>/
+    //    subfolder everything else below is read from.
+    // =========================================================================
+    const std::string scenario_name = read_scenario_name("input/scenario.txt");
+    const std::string INPUT_DIR     = "input/" + scenario_name + "/";
+    std::cout << "Active scenario: " << scenario_name
+              << "  (reading from " << INPUT_DIR << ")\n";
+
+    Scenario scenario = Scenario::LID_DRIVEN_CAVITY;
+    if (scenario_name == "differentially_heated_cavity") scenario = Scenario::DIFFERENTIALLY_HEATED_CAVITY;
+    else if (scenario_name == "square_cylinder")          scenario = Scenario::SQUARE_CYLINDER;
+    // else stays LID_DRIVEN_CAVITY — matches the historical default behavior.
+
+    // =========================================================================
     // 1. MESH GENERATION
     // =========================================================================
     MeshConfig myConfig;
@@ -92,6 +150,20 @@ int main() {
     myConfig.build_connectivity(uMesh);
     myConfig.build_connectivity(vMesh);
 
+    // Square Cylinder only: mark the immersed solid obstacle AFTER
+    // build_connectivity (needs bc_*/n_* already derived) and BEFORE the
+    // pressure matrix is assembled below (it must see is_solid already set).
+    // Never called for the other two scenarios — pMesh.cells[*].is_solid
+    // stays false everywhere for them, by construction.
+    if (scenario == Scenario::SQUARE_CYLINDER) {
+        double ox0 = 0.0, ox1 = 0.0, oy0 = 0.0, oy1 = 0.0;
+        if (!read_obstacle_bounds(INPUT_DIR + "obstacle.txt", ox0, ox1, oy0, oy1)) {
+            std::cerr << "Error: could not read " << INPUT_DIR << "obstacle.txt\n";
+            return 1;
+        }
+        myConfig.mark_solid_block(pMesh, ox0, ox1, oy0, oy1);
+    }
+
     myConfig.export_mesh_to_VTK(pMesh, OUTPUT_DIR + "mesh_P.vtk");
     myConfig.export_mesh_to_VTK(uMesh, OUTPUT_DIR + "mesh_U.vtk");
     myConfig.export_mesh_to_VTK(vMesh, OUTPUT_DIR + "mesh_V.vtk");
@@ -107,9 +179,17 @@ int main() {
 
     PressurePoissonSystem poisson(pMesh, uMesh, vMesh);
     auto triplets = poisson.assembleMatrix();
-    // pinReferencePressure needs a dummy b here; b[0]=0 is re-applied each step.
-    { Vector dummy_b(pMesh.num_active_nodes, 0.0);
-      poisson.pinReferencePressure(triplets, dummy_b); }
+    // Closed-cavity scenarios (LDC, DHC) have no pressure reference (all
+    // boundaries are homogeneous Neumann) and need pinReferencePressure to
+    // regularize the singular system. The Square Cylinder has a real OUTLET
+    // with a Dirichlet pressure row (see LaplaceOperator), which already
+    // regularizes the system on its own — pinning it too would be redundant
+    // and would incorrectly zero a node that isn't the designated reference.
+    if (scenario != Scenario::SQUARE_CYLINDER) {
+        // pinReferencePressure needs a dummy b here; b[0]=0 is re-applied each step.
+        Vector dummy_b(pMesh.num_active_nodes, 0.0);
+        poisson.pinReferencePressure(triplets, dummy_b);
+    }
 
     CSRMatrix A = CSRMatrix::fromTriplets(pMesh.num_active_nodes, triplets);
     PCG PCG_solver;
@@ -126,17 +206,25 @@ int main() {
     std::filesystem::create_directories(OUTPUT_DIR);
 
     // --- Problem selection: lid-driven cavity vs differentially heated cavity ---
-    const bool   energy_on = (myConfig.solve_energy != 0);
+    // energy_on keeps its exact historical meaning (drives EnergySolver +
+    // Buoyancy below) — now cross-derived from `scenario` instead of
+    // solve_energy directly, but still requires solve_energy!=0 so a
+    // misconfigured sim_params.txt can't silently enable the energy equation.
+    const bool   energy_on = (scenario == Scenario::DIFFERENTIALLY_HEATED_CAVITY) &&
+                             (myConfig.solve_energy != 0);
     const double Pr        = myConfig.Pr;
+    const double U_inf     = myConfig.U_inf;
 
-    // Unified case list: Reynolds numbers (lid) or Rayleigh numbers (heated).
+    // Unified case list: Reynolds numbers (lid / cylinder) or Rayleigh numbers (heated).
     std::vector<double> case_values;
-    if (energy_on) {
+    if (scenario == Scenario::DIFFERENTIALLY_HEATED_CAVITY) {
         case_values = read_rayleigh_cases(INPUT_DIR + "rayleigh_cases.txt");
         myConfig.define_temperature_boundaries(pMesh, INPUT_DIR + "boundaries_T.txt");
         std::cout << "\n*** Energy equation ON — Differentially Heated Cavity "
                   << "(Ra sweep, Pr = " << Pr << ") ***\n";
     } else {
+        // Lid-Driven Cavity and Square Cylinder both sweep Reynolds numbers
+        // from the same per-scenario reynolds_cases.txt file.
         for (int re : read_reynolds_cases(INPUT_DIR + "reynolds_cases.txt"))
             case_values.push_back(static_cast<double>(re));
     }
@@ -189,11 +277,30 @@ int main() {
         std::cout << "Field '" << fieldName << "' exported to: " << filename << "\n";
     };
 
+    if (scenario == Scenario::SQUARE_CYLINDER) {
+        // Debug visual check (validation checkpoint 1): export the solid
+        // mask as its own cell-data scalar, independent of any flow case, so
+        // the obstacle footprint can be confirmed visually in ParaView.
+        Vector mask(pMesh.num_active_nodes, 0.0);
+        for (int k = 0; k < pMesh.num_active_nodes; ++k)
+            mask[k] = pMesh.cells[k].is_solid ? 1.0 : 0.0;
+        writeFieldVTK(pMesh, mask, "obstacle_mask", OUTPUT_DIR + "obstacle_mask.vtk");
+    }
+
     for (double caseVal : case_values) {
         // Lid mode: caseVal = Re, nu = U*L/Re. Heated mode: caseVal = Ra, nu = Pr.
+        // Cylinder mode: caseVal = Re, nu = U_inf*obstacle_L/Re.
         const int    Re = energy_on ? 0 : static_cast<int>(std::lround(caseVal));
         const double Ra = energy_on ? caseVal : 0.0;
-        const double nu = energy_on ? Pr : (U_lid * myConfig.L_domain / caseVal);
+        double nu;
+        if (energy_on) {
+            nu = Pr;
+        } else if (scenario == Scenario::SQUARE_CYLINDER) {
+            const double obstacle_L = pMesh.obstacle_xmax - pMesh.obstacle_xmin;
+            nu = U_inf * obstacle_L / caseVal;
+        } else {
+            nu = U_lid * myConfig.L_domain / caseVal;
+        }
 
         cout << "\n============================================================\n";
         if (energy_on)
@@ -222,6 +329,24 @@ int main() {
                             ConvectionScheme::UPWIND);
         Vector T(pMesh.num_active_nodes, 0.5);
 
+        // Square Cylinder only: output directory created up front (needed to
+        // open forces.csv before the time loop starts) and drag/lift
+        // recorded incrementally every step.
+        const bool is_cylinder = (scenario == Scenario::SQUARE_CYLINDER);
+        std::ostringstream cyl_dir_stream;
+        cyl_dir_stream << OUTPUT_DIR << "square_cylinder/Re_" << Re;
+        const std::string cyl_case_dir = cyl_dir_stream.str() + "/";
+        ObstacleForces obstacleForces(pMesh, uMesh, vMesh, nu, rho);
+        std::ofstream forcesFile;
+        std::vector<double> force_time, force_Cl;
+        if (is_cylinder) {
+            std::filesystem::create_directories(cyl_case_dir);
+            forcesFile.open(cyl_case_dir + "forces.csv");
+            forcesFile << "step,time,Cd,Cl\n";
+        }
+        const double dynPress = 0.5 * rho * U_inf * U_inf *
+                                 (pMesh.obstacle_xmax - pMesh.obstacle_xmin) * myConfig.W_depth;
+
         for (int step = 0; step < max_steps; ++step) {
             u_old = u_star;
 
@@ -231,14 +356,29 @@ int main() {
             poisson.setVelocityFields(u_star, v_star);
 
             b_rhs = poisson.computeRHS(dt, rho);
-            b_rhs[0] = 0.0;
+            if (!is_cylinder) b_rhs[0] = 0.0;  // only needed when pinReferencePressure was applied
 
-            p_sol = CG_solver.solve(A, b_rhs, p_sol);
+            // Square Cylinder meshes are highly stretched near the obstacle
+            // (high cell aspect ratio), which raises the Laplacian's condition
+            // number well beyond what plain CG handles well in the iteration
+            // cap below — use Jacobi-preconditioned CG (PCG) for this
+            // scenario only. LDC/DHC keep plain CG, exactly as before.
+            p_sol = is_cylinder ? PCG_solver.solve(A, b_rhs, p_sol)
+                                : CG_solver.solve(A, b_rhs, p_sol);
             poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
             momentum.applyBoundaryConditions(u_star, v_star);
 
             if (energy_on)
                 energy.advance(T, u_star, v_star, dt);  // transport theta
+
+            if (is_cylinder && dynPress > 0.0) {
+                auto [Fx, Fy] = obstacleForces.computeForces(p_sol, u_star, v_star);
+                const double Cd = Fx / dynPress;
+                const double Cl = Fy / dynPress;
+                forcesFile << step << "," << (step * dt) << "," << Cd << "," << Cl << "\n";
+                force_time.push_back(step * dt);
+                force_Cl.push_back(Cl);
+            }
 
             if (step % 100 == 0) {
                 double du_max = 0.0;
@@ -257,9 +397,12 @@ int main() {
             }
         }
 
+        if (is_cylinder) forcesFile.close();
+
         std::ostringstream re_dir;
-        if (energy_on) re_dir << OUTPUT_DIR << "Ra_" << (long long)Ra;
-        else           re_dir << OUTPUT_DIR << "Re_" << Re;
+        if (energy_on)        re_dir << OUTPUT_DIR << "Ra_" << (long long)Ra;
+        else if (is_cylinder) re_dir << OUTPUT_DIR << "square_cylinder/Re_" << Re;
+        else                   re_dir << OUTPUT_DIR << "Re_" << Re;
         std::filesystem::create_directories(re_dir.str());
         const std::string case_dir = re_dir.str() + "/";
 
@@ -269,6 +412,16 @@ int main() {
         if (energy_on)
             writeFieldVTK(pMesh, T,   "temperature", case_dir + "temperature.vtk");
 
+        if (is_cylinder) {
+            const double St = estimate_shedding_frequency(force_time, force_Cl) *
+                               (pMesh.obstacle_xmax - pMesh.obstacle_xmin) / U_inf;
+            std::ofstream sf(case_dir + "strouhal.csv");
+            sf << "Re,St\n" << Re << "," << St << "\n";
+            std::cout << "\n--- Square Cylinder  Re=" << Re << " ---\n"
+                       << "  Strouhal (peak-detection estimate, UNVALIDATED against "
+                       << "literature this round) = " << St << "\n";
+        }
+
     // =========================================================================
     // 5. VALIDATION — Ghia et al. (1982) benchmark, Re = 100
     //    u(y) along vertical centreline  (x = L/2)
@@ -277,7 +430,7 @@ int main() {
     //    Ghia reference data normalised: y/H, u/U_lid  |  x/L, v/U_lid
     //    Make sure Re = U_lid*L/nu = 100 (set nu = L/100 in data.txt)
     // =========================================================================
-        if (!energy_on) {
+        if (!energy_on && !is_cylinder) {
         const Vector& u_final = u_star;
         const Vector& v_final = v_star;
 
@@ -403,6 +556,12 @@ int main() {
         for (auto& row : ghia_v_table)
             std::cout << row[0] << "   " << row[1 + ghia_col] << "\n";
         }  // end lid-cavity (Ghia) validation
+        else if (is_cylinder) {
+            // Square Cylinder: forces.csv and strouhal.csv were already
+            // written above (per-step recording + end-of-case estimate) —
+            // nothing further needed here. See docs/scenarios/square_cylinder.md
+            // for the current validation status.
+        }
         else {
         // =====================================================================
         // VALIDATION — de Vahl Davis (1983) Differentially Heated Cavity

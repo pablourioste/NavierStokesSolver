@@ -1,0 +1,16 @@
+# --- Square Cylinder: free-stream velocity, fluid properties, time stepping ---
+
+# Free-stream (inlet) velocity. nu is derived per-case from U_inf, the
+# obstacle side length, and the swept Reynolds number (see reynolds_cases.txt).
+U_inf = 1.0
+rho   = 1
+
+dt    = 1e-5
+
+solve_energy = 0
+Pr = 0.71
+
+# Vortex shedding never reaches steady state by design -> ss_tol = 0.0
+# disables the early-exit check (same pattern as the DHC scenario).
+max_steps = 200000
+ss_tol = 0.0

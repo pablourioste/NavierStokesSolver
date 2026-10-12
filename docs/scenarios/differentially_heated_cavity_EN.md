@@ -75,7 +75,7 @@ d(theta)/dt + (u . grad) theta = alpha * laplacian(theta)
 ## 2. Problem selection: how the DHC is activated
 
 The switch between **Lid-Driven Cavity** and **Differentially Heated Cavity** is
-a single integer in [input/sim_params.txt](../../input/sim_params.txt):
+a single integer in [input/differentially_heated_cavity/sim_params.txt](../../input/differentially_heated_cavity/sim_params.txt):
 
 ```text
 solve_energy = 1     # 0 -> Lid cavity (momentum + pressure)
@@ -106,12 +106,12 @@ Everything in `input/`. `main()` reads them at startup in this order
 
 | File | Read by | Controls |
 |------|---------|----------|
-| [data.txt](../../input/data.txt) | `get_data` | Geometry: `L_domain`, `H_domain`, depth `W_depth`, and the NW/NE/SW/SE nodes that split the domain into zones |
-| [stretch.txt](../../input/stretch.txt) | `get_stretch` | Cell count per zone and the **stretching β** (refinement) |
-| [sim_params.txt](../../input/sim_params.txt) | `get_sim_params` | `dt`, `rho`, `U_lid`, `nu`, `max_steps`, `ss_tol`, **`solve_energy`**, **`Pr`** |
-| [boundaries.txt](../../input/boundaries.txt) | `define_boundaries` | **Velocity** boundary conditions |
-| [boundaries_T.txt](../../input/boundaries_T.txt) | `define_temperature_boundaries` | **Temperature** boundary conditions (DHC only) |
-| [rayleigh_cases.txt](../../input/rayleigh_cases.txt) | `read_rayleigh_cases` | List of Rayleigh numbers to sweep |
+| [data.txt](../../input/differentially_heated_cavity/data.txt) | `get_data` | Geometry: `L_domain`, `H_domain`, depth `W_depth`, and the NW/NE/SW/SE nodes that split the domain into zones |
+| [stretch.txt](../../input/differentially_heated_cavity/stretch.txt) | `get_stretch` | Cell count per zone and the **stretching β** (refinement) |
+| [sim_params.txt](../../input/differentially_heated_cavity/sim_params.txt) | `get_sim_params` | `dt`, `rho`, `U_lid`, `nu`, `max_steps`, `ss_tol`, **`solve_energy`**, **`Pr`** |
+| [boundaries.txt](../../input/differentially_heated_cavity/boundaries.txt) | `define_boundaries` | **Velocity** boundary conditions |
+| [boundaries_T.txt](../../input/differentially_heated_cavity/boundaries_T.txt) | `define_temperature_boundaries` | **Temperature** boundary conditions (DHC only) |
+| [rayleigh_cases.txt](../../input/differentially_heated_cavity/rayleigh_cases.txt) | `read_rayleigh_cases` | List of Rayleigh numbers to sweep |
 
 ### 3.1 `data.txt` — geometry
 

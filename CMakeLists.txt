@@ -23,6 +23,10 @@ set(SOLVER_SOURCES
     src/EnergySolver.cpp
 )
 
+set(POSTPROCESSING_SOURCES
+    src/postprocessing/ObstacleForces.cpp
+)
+
 set(MAIN_SOURCE
     src/main.cpp
 )
@@ -42,6 +46,7 @@ add_executable(mesh_gen
     ${MESH_SOURCES}
     ${SOLVER_SOURCES}
     ${OPERATOR_SOURCES}
+    ${POSTPROCESSING_SOURCES}
 )
 
 target_include_directories(mesh_gen PRIVATE
@@ -49,6 +54,7 @@ target_include_directories(mesh_gen PRIVATE
     ${CMAKE_SOURCE_DIR}/src/mesh
     ${CMAKE_SOURCE_DIR}/src/solver
     ${CMAKE_SOURCE_DIR}/src/operators
+    ${CMAKE_SOURCE_DIR}/src/postprocessing
 )
 
 target_compile_options(mesh_gen PRIVATE -Wall -Wextra)
@@ -61,6 +67,7 @@ add_executable(reynolds_sweep
     ${MESH_SOURCES}
     ${SOLVER_SOURCES}
     ${OPERATOR_SOURCES}
+    ${POSTPROCESSING_SOURCES}
 )
 
 target_include_directories(reynolds_sweep PRIVATE
@@ -68,6 +75,7 @@ target_include_directories(reynolds_sweep PRIVATE
     ${CMAKE_SOURCE_DIR}/src/mesh
     ${CMAKE_SOURCE_DIR}/src/solver
     ${CMAKE_SOURCE_DIR}/src/operators
+    ${CMAKE_SOURCE_DIR}/src/postprocessing
 )
 
 target_compile_options(reynolds_sweep PRIVATE -Wall -Wextra)

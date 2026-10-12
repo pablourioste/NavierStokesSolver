@@ -1,0 +1,7 @@
+# =============================================================================
+# Active scenario selector — read FIRST by main.cpp, before anything else.
+# Picks which input/<scenario>/ subfolder all other config is read from.
+#
+# Valid values: lid_driven_cavity | differentially_heated_cavity | square_cylinder
+# =============================================================================
+scenario = square_cylinder

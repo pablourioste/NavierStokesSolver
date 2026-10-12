@@ -1,0 +1,28 @@
+# --- Mesh parameters — Square Cylinder ---
+#
+# Three zones in X: west (upstream of obstacle), center (spans the obstacle
+# footprint), east (downstream wake region). Symmetric in Y: south/center/north,
+# center spans the obstacle footprint vertically.
+
+# Stretching betas
+# West: refine toward the obstacle (beta>0 -> refine at end of segment, x=L_west)
+beta_x_west   = 1.5
+# Center: keep uniform across the obstacle footprint for simplicity
+beta_x_center = 0.0
+# East (wake): refine toward the obstacle (beta<0 -> refine at start, x=0)
+beta_x_east   = -1.5
+# South: refine toward the obstacle
+beta_y_south  = 1.5
+beta_y_center = 0.0
+# North: refine toward the obstacle
+beta_y_north  = -1.5
+
+# Cell counts per zone
+# X: west (upstream, 0.75 long), center (obstacle, 0.125 long), east (downstream, 2.25 long)
+N_cells_west    = 90
+N_cells_center  = 40
+N_cells_east    = 220
+# Y: south (0.4375), center (obstacle, 0.125), north (0.4375)
+M_cells_west    = 110
+M_cells_center  = 40
+M_cells_east    = 110

@@ -5,6 +5,7 @@ build_cmake/
 # Python
 __pycache__/
 *.pyc
+.venv/
 
 # Ad-hoc local studies (not part of the published examples)
 study/

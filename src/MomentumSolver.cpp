@@ -24,12 +24,19 @@
 
 // ---------------------------------------------------------------------------
 // ghostValue — maps a BCType + stored face value to a velocity ghost value
+//
+// NOTE: this function is only ever used to build the TANGENTIAL ghost for
+// the stencil's cross-direction (e.g. pMesh.bound_west feeds v_ghost_west_,
+// a V-node ghost, even though WEST is a U-normal face). faceVal for an INLET
+// face stores the prescribed NORMAL inflow speed (e.g. U_inf), which is NOT
+// the correct tangential ghost — a uniform inflow profile has zero shear, so
+// the tangential ghost at an inlet must be 0.0, not faceVal.
 // ---------------------------------------------------------------------------
 double MomentumSolver::ghostValue(BCType type, double faceVal)
 {
     switch (type) {
         case WALL_FIXED_VALUE: return faceVal;
-        case INLET:      return faceVal;
+        case INLET:
         case WALL_ADIABATIC:
         case OUTLET:
         default:         return 0.0;
@@ -83,7 +90,8 @@ void MomentumSolver::applyBoundaryConditions(Vector& u, Vector& v) const
     // u-nodes at k=1 (west) and k=N+1 (east) sit ON the wall.
     // INLET  → prescribed normal velocity = face value
     // WALL*  → no-slip, u = 0
-    // OUTLET → zero-gradient approx, u = 0
+    // OUTLET → zero-gradient outflow: copy the last interior U value, so
+    //          fluid exits freely instead of being clamped to a wall (u=0).
     // The tangential ghost (u above/below NORTH/SOUTH wall) lives in u_ghost_north_/south_
     // and is used inside uRHS — NOT set here.
     for (int j = 1; j <= M; ++j) {
@@ -91,8 +99,12 @@ void MomentumSolver::applyBoundaryConditions(Vector& u, Vector& v) const
                                                      : pMesh_.bound_west[j-1].type;
         const BCType et = pMesh_.bound_east.empty() ? WALL_ADIABATIC
                                                      : pMesh_.bound_east[j-1].type;
-        u[uIdx(1,   j)] = (wt == INLET) ? pMesh_.bound_west[j-1].value : 0.0;
-        u[uIdx(N+1, j)] = (et == INLET) ? pMesh_.bound_east[j-1].value : 0.0;
+        u[uIdx(1,   j)] = (wt == INLET)  ? pMesh_.bound_west[j-1].value
+                         : (wt == OUTLET) ? u[uIdx(2, j)]
+                         : 0.0;
+        u[uIdx(N+1, j)] = (et == INLET)  ? pMesh_.bound_east[j-1].value
+                         : (et == OUTLET) ? u[uIdx(N, j)]
+                         : 0.0;
     }
 
     // -- V field boundary nodes (normal component at SOUTH/NORTH faces) --
@@ -106,6 +118,20 @@ void MomentumSolver::applyBoundaryConditions(Vector& u, Vector& v) const
         v[vIdx(i, 1  )] = 0.0;   // south wall: no penetration
         v[vIdx(i, M+1)] = 0.0;   // north wall: no penetration
     }
+
+    // -- Immersed obstacle surface nodes (Square Cylinder scenario only) --
+    // A U/V node sitting exactly on the fluid/solid interface (exactly one of
+    // its two straddling P-cells is solid) is a no-penetration normal-velocity
+    // node, same treatment as the outer wall. Vacuous (no-op) for scenarios
+    // that never call MeshConfig::mark_solid_block() — no cell is ever solid,
+    // so this loop never finds an interface and touches nothing.
+    for (int j = 1; j <= M; ++j)
+        for (int k = 2; k <= N; ++k)
+            if (uNodeOnObstacleSurface(pMesh_, k, j)) u[uIdx(k, j)] = 0.0;
+
+    for (int l = 2; l <= M; ++l)
+        for (int i = 1; i <= N; ++i)
+            if (vNodeOnObstacleSurface(pMesh_, i, l)) v[vIdx(i, l)] = 0.0;
 }
 
 
@@ -123,41 +149,66 @@ double MomentumSolver::uRHS(const Vector& u, const Vector& v,
 
     const double x_P = uMesh_.cells[uIdx(k, j)].x;
     const double y_P = uMesh_.cells[uIdx(k, j)].y;
+    const double u_P = u[uIdx(k, j)];
 
     // ---- Neighbours and distances in x ----
-    // k=2..N guarantees k-1>=1 and k+1<=N+1, both in the vector.
-    const double u_E  = u[uIdx(k+1, j)];
-    const double u_W  = u[uIdx(k-1, j)];
-    const double dx_e = uMesh_.cells[uIdx(k+1, j)].x - x_P;
-    const double dx_w = x_P - uMesh_.cells[uIdx(k-1, j)].x;
+    // k=2..N guarantees k-1>=1 and k+1<=N+1 within the global mesh, but a
+    // neighbour may fall inside an immersed solid obstacle (uNodeBlocked).
+    double u_E, dx_e;
+    if (!uNodeBlocked(pMesh_, k + 1, j)) {
+        u_E  = u[uIdx(k+1, j)];
+        dx_e = uMesh_.cells[uIdx(k+1, j)].x - x_P;
+    } else {
+        u_E  = -u_P;
+        dx_e = 2.0 * (pMesh_.obstacle_xmax - x_P);
+    }
+
+    double u_W, dx_w;
+    if (!uNodeBlocked(pMesh_, k - 1, j)) {
+        u_W  = u[uIdx(k-1, j)];
+        dx_w = x_P - uMesh_.cells[uIdx(k-1, j)].x;
+    } else {
+        u_W  = -u_P;
+        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmin);
+    }
 
     // ---- Neighbours and distances in y ----
-    // South: j=1 hits the no-slip bottom wall (ghost, not in vector).
+    // South: j=1 hits the no-slip bottom wall (ghost, not in vector); or the
+    // neighbour (k,j-1) may fall inside an obstacle (uNodeBlocked).
+    const bool south_blocked = (j > 1) && uNodeBlocked(pMesh_, k, j - 1);
+    const bool north_blocked = (j < M) && uNodeBlocked(pMesh_, k, j + 1);
+
     double u_S, dy_s;
-    if (j > 1) {
+    if (j > 1 && !south_blocked) {
         u_S  = u[uIdx(k, j-1)];
         dy_s = y_P - uMesh_.cells[uIdx(k, j-1)].y;
+    } else if (south_blocked) {
+        // Obstacle surface, no-slip: ghost = -u_P (u_wall = 0).
+        u_S  = -u_P;
+        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymin);
     } else {
         // Image/ghost-cell method: ghost = 2*u_wall - u_P, distance = 2*(y_P - wall)
         // Ensures (u_ghost + u_P)/2 = u_wall at the south face, and gives
         // d²u/dy² = (2*u_wall - 3*u_P + u_N)/dy²  (matches reference)
-        u_S  = 2.0 * u_ghost_south_ - u[uIdx(k, j)];
+        u_S  = 2.0 * u_ghost_south_ - u_P;
         dy_s = 2.0 * (y_P - uMesh_.yvc[0]);
     }
 
-    // North: j=M hits the north wall ghost (not in vector).
+    // North: j=M hits the north wall ghost (not in vector); or the neighbour
+    // (k,j+1) may fall inside an obstacle.
     double u_N, dy_n;
-    if (j < M) {
+    if (j < M && !north_blocked) {
         u_N  = u[uIdx(k, j+1)];
         dy_n = uMesh_.cells[uIdx(k, j+1)].y - y_P;
+    } else if (north_blocked) {
+        u_N  = -u_P;
+        dy_n = 2.0 * (pMesh_.obstacle_ymax - y_P);
     } else {
         // Image/ghost-cell method: ghost = 2*u_wall - u_P, distance = 2*(wall - y_P)
         // For lid: u_wall = U_ref → ghost = 2*U_ref - u_P
-        u_N  = 2.0 * u_ghost_north_ - u[uIdx(k, j)];
+        u_N  = 2.0 * u_ghost_north_ - u_P;
         dy_n = 2.0 * (uMesh_.yvc[M] - y_P);
     }
-
-    const double u_P = u[uIdx(k, j)];
 
     // ---- Diffusion: delegated to DiffusionOperator ----
     const double diff = diffOp_.diffuseU(u, k, j);
@@ -199,38 +250,62 @@ double MomentumSolver::vRHS(const Vector& u, const Vector& v,
 
     const double x_P = vMesh_.cells[vIdx(i, l)].x;
     const double y_P = vMesh_.cells[vIdx(i, l)].y;
+    const double v_P = v[vIdx(i, l)];
 
     // ---- Neighbours and distances in y ----
-    // l=2..M guarantees l-1>=1 and l+1<=M+1, both in the vector.
-    const double v_N  = v[vIdx(i, l+1)];
-    const double v_S  = v[vIdx(i, l-1)];
-    const double dy_n = vMesh_.cells[vIdx(i, l+1)].y - y_P;
-    const double dy_s = y_P - vMesh_.cells[vIdx(i, l-1)].y;
+    // l=2..M guarantees l-1>=1 and l+1<=M+1 within the global mesh, but a
+    // neighbour may fall inside an immersed solid obstacle (vNodeBlocked).
+    double v_N, dy_n;
+    if (!vNodeBlocked(pMesh_, i, l + 1)) {
+        v_N  = v[vIdx(i, l+1)];
+        dy_n = vMesh_.cells[vIdx(i, l+1)].y - y_P;
+    } else {
+        v_N  = -v_P;
+        dy_n = 2.0 * (pMesh_.obstacle_ymax - y_P);
+    }
+
+    double v_S, dy_s;
+    if (!vNodeBlocked(pMesh_, i, l - 1)) {
+        v_S  = v[vIdx(i, l-1)];
+        dy_s = y_P - vMesh_.cells[vIdx(i, l-1)].y;
+    } else {
+        v_S  = -v_P;
+        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymin);
+    }
 
     // ---- Neighbours and distances in x ----
-    // West: i=1 hits the no-slip west wall (ghost, not in vector).
+    // West: i=1 hits the no-slip west wall (ghost, not in vector); or the
+    // neighbour (i-1,l) may fall inside an obstacle.
+    const bool west_blocked = (i > 1) && vNodeBlocked(pMesh_, i - 1, l);
+    const bool east_blocked = (i < N) && vNodeBlocked(pMesh_, i + 1, l);
+
     double v_W, dx_w;
-    if (i > 1) {
+    if (i > 1 && !west_blocked) {
         v_W  = v[vIdx(i-1, l)];
         dx_w = x_P - vMesh_.cells[vIdx(i-1, l)].x;
+    } else if (west_blocked) {
+        v_W  = -v_P;
+        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmin);
     } else {
         // Image/ghost-cell method: ghost = 2*v_wall - v_P, distance = 2*(x_P - wall)
-        v_W  = 2.0 * v_ghost_west_ - v[vIdx(i, l)];
+        v_W  = 2.0 * v_ghost_west_ - v_P;
         dx_w = 2.0 * (x_P - vMesh_.xvc[0]);
     }
 
-    // East: i=N hits the east wall ghost (not in vector).
+    // East: i=N hits the east wall ghost (not in vector); or the neighbour
+    // (i+1,l) may fall inside an obstacle.
     double v_E, dx_e;
-    if (i < N) {
+    if (i < N && !east_blocked) {
         v_E  = v[vIdx(i+1, l)];
         dx_e = vMesh_.cells[vIdx(i+1, l)].x - x_P;
+    } else if (east_blocked) {
+        v_E  = -v_P;
+        dx_e = 2.0 * (pMesh_.obstacle_xmax - x_P);
     } else {
         // Image/ghost-cell method: ghost = 2*v_wall - v_P, distance = 2*(wall - x_P)
-        v_E  = 2.0 * v_ghost_east_ - v[vIdx(i, l)];
+        v_E  = 2.0 * v_ghost_east_ - v_P;
         dx_e = 2.0 * (vMesh_.xvc[N] - x_P);
     }
-
-    const double v_P = v[vIdx(i, l)];
 
     // ---- Diffusion: delegated to DiffusionOperator ----
     const double diff = diffOp_.diffuseV(v, i, l);

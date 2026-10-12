@@ -1,5 +1,6 @@
 #pragma once
 #include "mesh/Mesh_config.h"
+#include "mesh/ObstacleMask.hpp"
 #include "solver/sparse/solver_class_sparse.hpp"  // Vector
 
 // =============================================================================

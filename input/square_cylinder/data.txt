@@ -1,0 +1,24 @@
+# --- Domain & Geometry — Square Cylinder channel ---
+# Comments start with #
+
+L_domain = 3.125
+H_domain = 1.0
+W_depth  = 0.1
+
+# Zone corners (NW/NE/SW/SE) placed so the "center" zone in X and Y exactly
+# matches the solid obstacle footprint — this reuses the mesh's existing
+# zone-stretching machinery (beta_x_center/beta_y_center in stretch.txt) to
+# concentrate cells around the obstacle, purely for mesh density; the actual
+# solid/fluid masking is done separately by mark_solid_block() using the
+# matching bounds in obstacle.txt.
+#
+# West zone upstream of the obstacle, center zone spans the obstacle in X,
+# east zone is the downstream wake region.
+node_NW_x = 0.75
+node_NW_y = 0.5625
+node_SE_x = 0.875
+node_SE_y = 0.4375
+node_NE_x = 0.875
+node_NE_y = 0.5625
+node_SW_x = 0.75
+node_SW_y = 0.4375

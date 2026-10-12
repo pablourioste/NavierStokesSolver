@@ -1,0 +1,10 @@
+# =============================================================================
+# Condiciones de Contorno — Square Cylinder (open channel)
+# WEST = inlet (uniform free-stream U_inf), EAST = outlet (zero-gradient),
+# NORTH/SOUTH = no-slip channel walls.
+# Formato: BOCO_NAME  CARA  IDX_START  IDX_END  TIPO     VALOR
+# =============================================================================
+inlet         WEST    0       9999     INLET    1.0
+outlet        EAST    0       9999     OUTLET   0.0
+wall_north    NORTH   0       9999     WALL     0.0
+wall_south    SOUTH   0       9999     WALL     0.0

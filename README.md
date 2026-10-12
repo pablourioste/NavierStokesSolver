@@ -2,8 +2,11 @@
 
 A 2D incompressible Navier–Stokes solver built from scratch in C++17, using a
 **staggered (MAC) grid** and the **fractional-step (projection) method**.
-Validated against two classic CFD benchmarks: the Lid-Driven Cavity (Ghia et
-al. 1982) and the Differentially Heated Cavity (de Vahl Davis 1983).
+Three scenarios: the Lid-Driven Cavity and Differentially Heated Cavity are
+validated against classic CFD benchmarks (Ghia et al. 1982, de Vahl Davis
+1983); a Square Cylinder scenario (immersed obstacle, vortex shedding,
+drag/lift/Strouhal) runs end to end but is not yet calibrated against
+literature — see the scenario docs for exact status.
 
 ![Lid-driven cavity validation against Ghia et al. (1982)](no_Stretched/validation.png)
 
@@ -19,32 +22,42 @@ al. 1982) and the Differentially Heated Cavity (de Vahl Davis 1983).
 - **Modular discrete operators** (gradient, divergence, Laplacian,
   diffusion), each independently verified via the Method of Manufactured
   Solutions, with automated convergence-rate reporting.
-- **Two validated physical scenarios**, selectable by a single flag:
-  - **Lid-Driven Cavity** — momentum + pressure only.
+- **Three physical scenarios**, selectable via `input/scenario.txt`:
+  - **Lid-Driven Cavity** — momentum + pressure only. Validated.
   - **Differentially Heated Cavity** — adds an energy equation and
     Boussinesq buoyancy coupling on top of the same core solver, with zero
-    modifications to the momentum/pressure code.
+    modifications to the momentum/pressure code. Validated.
+  - **Square Cylinder** — an immersed solid obstacle in an open channel
+    (inlet/outlet), with drag/lift/Strouhal post-processing. Runs end to end
+    without NaN/divergence; Strouhal-number agreement with literature is not
+    yet calibrated.
 - **Batch sweeps** over Reynolds or Rayleigh numbers in a single run.
 - **VTK export** (rectilinear grid) for direct visualization in ParaView.
 - **Python post-processing**: centerline-profile validation against
-  reference data, Nusselt-number/temperature-field plots, and
-  operator convergence-rate plots.
+  reference data, Nusselt-number/temperature-field plots, vorticity +
+  drag/lift/Strouhal plots, and operator convergence-rate plots.
 
 ## Project structure
 
 ```
 .
 ├── src/                    # C++ solver source
-│   ├── mesh/                   mesh generation, stretching, boundary setup
+│   ├── mesh/                   mesh generation, stretching, boundary setup,
+│   │                           ObstacleMask.hpp (immersed-obstacle helpers)
 │   ├── operators/               gradient / divergence / Laplacian / diffusion
 │   ├── solver/sparse/           CSR matrix + CG/PCG/GS/SOR linear solvers
+│   ├── postprocessing/           drag/lift/Strouhal (Square Cylinder scenario)
 │   ├── verification/            MMS-based operator convergence checks
 │   ├── MomentumSolver.*         predictor step (momentum)
 │   ├── PressurePoissonSystem.*  pressure projection step
 │   ├── EnergySolver.*           energy equation (DHC scenario only)
 │   ├── Buoyancy.hpp             Boussinesq coupling (DHC scenario only)
 │   └── main.cpp                 driver: mesh → time loop → VTK/CSV output
-├── input/                  # Editable run configuration (geometry, BCs, params)
+├── input/
+│   ├── scenario.txt             selects the active scenario
+│   ├── lid_driven_cavity/        per-scenario config (geometry, BCs, params)
+│   ├── differentially_heated_cavity/
+│   └── square_cylinder/
 ├── output/                 # Simulation results (VTK, CSV, PNG), per case
 ├── plotters/               # Python post-processing / validation scripts
 ├── docs/
@@ -59,16 +72,34 @@ al. 1982) and the Differentially Heated Cavity (de Vahl Davis 1983).
 - CMake ≥ 3.15
 - A C++17 compiler (g++/clang++)
 - Python 3 with `numpy`, `pandas`, `matplotlib`, `scipy` (for the plotting
-  scripts in `plotters/`)
+  scripts in `plotters/`) — see the venv setup below.
+
+## Python environment (for the plotting scripts)
+
+The repo includes a `requirements.txt` pinning the packages the plotters in
+`plotters/` need. Set up a dedicated virtual environment once:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+`.vscode/settings.json` already points VSCode's Python extension at
+`.venv/bin/python3`, so opening any `plotters/*.py` file and running it
+(▷ button, "Run Python File", or the integrated terminal) uses the right
+interpreter automatically — no need to select one manually. If your system's
+default `python3` happens to resolve to some other environment (e.g. a
+different project's venv) that's missing these packages, explicitly call
+`.venv/bin/python3 plotters/plot_results.py` instead.
 
 ## Build & run
 
 ```bash
 bash run.sh              # configure, build, and run the main solver
 bash run.sh build        # configure + build only (all 3 executables)
-bash run.sh mesh_gen     # main solver: lid-driven cavity / DHC, per input/sim_params.txt
+bash run.sh mesh_gen     # main solver: scenario picked by input/scenario.txt
 bash run.sh verify       # operator_verify: MMS convergence check for the operators
-bash run.sh sweep        # reynolds_sweep: batch sweep over input/reynolds_cases.txt
+bash run.sh sweep        # reynolds_sweep: batch sweep over the active scenario's reynolds_cases.txt
 ```
 
 Or manually:
@@ -86,7 +117,7 @@ All three executables must be run **from the repository root**, since
 ### 1. Lid-Driven Cavity
 
 ```bash
-# input/sim_params.txt: solve_energy = 0
+# input/scenario.txt: scenario = lid_driven_cavity
 bash run.sh mesh_gen
 python3 plotters/plot_results.py
 ```
@@ -98,7 +129,7 @@ Validated against Ghia et al. (1982) at $Re = 100$–$10000$. See
 ### 2. Differentially Heated Cavity
 
 ```bash
-# input/sim_params.txt: solve_energy = 1
+# input/scenario.txt: scenario = differentially_heated_cavity
 bash run.sh mesh_gen
 python3 plotters/plot_dhc.py
 ```
@@ -108,7 +139,21 @@ $Ra=10^4$, matching the reference value (2.243) within a few percent. See
 — **note the explicit-scheme stability caveat** there before picking a time
 step.
 
-### 3. Operator verification / convergence rates
+### 3. Square Cylinder
+
+```bash
+# input/scenario.txt: scenario = square_cylinder
+bash run.sh mesh_gen
+python3 plotters/plot_square_cylinder.py
+```
+Immersed solid obstacle in an open channel, inlet/outlet flow, drag/lift
+recorded every step, provisional Strouhal estimate. **Runs clean, but the
+Strouhal number is not yet calibrated against literature (~0.13–0.15 at
+Re~100–200)** — see
+[docs/scenarios/square_cylinder.md](docs/scenarios/square_cylinder.md) for
+exactly what has and hasn't been checked.
+
+### 4. Operator verification / convergence rates
 
 ```bash
 bash run.sh verify
@@ -123,16 +168,20 @@ stretched-mesh accuracy).
 
 ## Input file reference
 
-All run configuration lives in `input/` as plain text, edited by hand:
+`input/scenario.txt` selects the active scenario
+(`lid_driven_cavity` / `differentially_heated_cavity` / `square_cylinder`);
+everything else lives in that scenario's own subfolder,
+`input/<scenario>/`, as plain text:
 
 | File | Controls |
 |---|---|
 | `data.txt` | Domain geometry: `L_domain`, `H_domain`, depth, zone corner nodes |
 | `stretch.txt` | Cell counts per zone and stretching factors (`beta_*`) |
-| `sim_params.txt` | `dt`, `rho`, `U_lid`, `nu`, `max_steps`, `ss_tol`, `solve_energy`, `Pr` |
+| `sim_params.txt` | `dt`, `rho`, `U_lid`/`U_inf`, `max_steps`, `ss_tol`, `solve_energy`, `Pr` |
 | `boundaries.txt` | Velocity boundary conditions |
-| `boundaries_T.txt` | Temperature boundary conditions (DHC scenario only) |
-| `reynolds_cases.txt` | Reynolds numbers to sweep (Lid-Driven Cavity) |
+| `boundaries_T.txt` | Temperature boundary conditions (DHC only) |
+| `obstacle.txt` | Solid obstacle bounds (Square Cylinder only) |
+| `reynolds_cases.txt` | Reynolds numbers to sweep (Lid-Driven Cavity / Square Cylinder) |
 | `rayleigh_cases.txt` | Rayleigh numbers to sweep (Differentially Heated Cavity) |
 
 ## Documentation
@@ -145,7 +194,7 @@ All run configuration lives in `input/` as plain text, edited by hand:
 **Scenarios** — the physical problems and how to run them:
 - [docs/scenarios/lid_driven_cavity.md](docs/scenarios/lid_driven_cavity.md)
 - [docs/scenarios/differentially_heated_cavity.md](docs/scenarios/differentially_heated_cavity.md) (+ [full implementation deep-dive](docs/scenarios/differentially_heated_cavity_EN.md))
-- [docs/scenarios/square_cylinder.md](docs/scenarios/square_cylinder.md) — **planned, not yet implemented**
+- [docs/scenarios/square_cylinder.md](docs/scenarios/square_cylinder.md) — **implemented, validation pending**
 
 **Legacy** (Spanish, detailed derivations from early development):
 [docs/ALGORITMO.md](docs/ALGORITMO.md), [docs/OPERATORS_REPORT.md](docs/OPERATORS_REPORT.md),
@@ -157,13 +206,14 @@ All run configuration lives in `input/` as plain text, edited by hand:
 |---|---|---|
 | Lid-Driven Cavity | Ghia, Ghia & Shin (1982), $Re=100$–$10000$ | centerline $u$/$v$ profiles overlay reference points |
 | Differentially Heated Cavity | de Vahl Davis (1983), $Ra=10^3$–$10^6$ | $\overline{Nu}$ within a few percent at $Ra=10^4$ |
+| Square Cylinder | literature $St\approx0.13$–0.15 at $Re\sim100$–200 | **not yet validated** — runs clean (no NaN/divergence), physically plausible $C_d$/wake, Strouhal uncalibrated |
 | Discrete operators | Method of Manufactured Solutions | ~2nd-order convergence on uniform meshes |
 
 ## Future improvements (not yet implemented)
 
 - CLI arguments / a config file selector, instead of hand-editing `input/*.txt` between runs.
 - Second-order-accurate Laplacian stencil on stretched meshes (currently 1st-order — see [docs/theory/mesh.md](docs/theory/mesh.md)).
-- Square Cylinder scenario (interior/immersed boundary conditions, inlet/outlet flow, drag/lift/Strouhal post-processing) — see [docs/scenarios/square_cylinder.md](docs/scenarios/square_cylinder.md).
+- Square Cylinder: mesh/`dt`/domain-length calibration to match the literature Strouhal number — see [docs/scenarios/square_cylinder.md §5](docs/scenarios/square_cylinder.md#5-validation-status-read-before-trusting-any-number-here) for exactly what's been checked and what hasn't.
 
 ## License
 

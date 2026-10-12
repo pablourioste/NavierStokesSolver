@@ -12,6 +12,11 @@ Vector DivergenceOperator::apply(const Vector& u, const Vector& v) const
     Vector div(n_cells, 0.0);
 
     for (int k = 0; k < n_cells; ++k) {
+        // Solid (immersed obstacle) P-cells have no fluid volume — their
+        // divergence is meaningless and must not be computed from the
+        // surrounding no-penetration-fixed U/V nodes.
+        if (pMesh_.cells[k].is_solid) { div[k] = 0.0; continue; }
+
         const int i = pMesh_.id_to_i[k];   // índice lógico 1-based
         const int j = pMesh_.id_to_j[k];
 

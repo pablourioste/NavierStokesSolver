@@ -28,17 +28,19 @@ involved (`EnergySolver`, `Buoyancy.hpp`) see
 
 ## 2. How to run it
 
-1. Set `solve_energy = 1` and choose `Pr` (typically `0.71`, air) in
-   [input/sim_params.txt](../../input/sim_params.txt).
-2. **Use a small `dt`** — see the stability warning below. The shipped
-   `sim_params.txt` already has `dt = 1e-5`, validated for this scenario.
-3. List the Rayleigh numbers to sweep in
-   [input/rayleigh_cases.txt](../../input/rayleigh_cases.txt) (defaults to
-   $Ra = 10^3, 10^4, 10^5, 10^6$ if empty).
-4. Temperature boundary conditions come from
-   [input/boundaries_T.txt](../../input/boundaries_T.txt) (hot west / cold
-   east / adiabatic top-bottom, already configured).
-5. Build and run:
+1. Set `scenario = differentially_heated_cavity` in
+   [input/scenario.txt](../../input/scenario.txt).
+2. `solve_energy = 1` and `Pr` (typically `0.71`, air) are set in
+   [input/differentially_heated_cavity/sim_params.txt](../../input/differentially_heated_cavity/sim_params.txt).
+3. **Use a small `dt`** — see the stability warning below. The shipped
+   `sim_params.txt` already has `dt = 1e-5`.
+4. List the Rayleigh numbers to sweep in
+   [input/differentially_heated_cavity/rayleigh_cases.txt](../../input/differentially_heated_cavity/rayleigh_cases.txt)
+   (defaults to $Ra = 10^3, 10^4, 10^5, 10^6$ if empty).
+5. Temperature boundary conditions come from
+   [input/differentially_heated_cavity/boundaries_T.txt](../../input/differentially_heated_cavity/boundaries_T.txt)
+   (hot west / cold east / adiabatic top-bottom, already configured).
+6. Build and run:
    ```bash
    bash run.sh mesh_gen
    ```
@@ -77,6 +79,19 @@ $$
 $$
 On a production 150² mesh this means `dt ~ 1e-5` or smaller — using the
 lid-cavity-scale `dt = 1e-3` **diverges to NaN** (the pressure CG solve
-fails to converge first). See
+fails to converge first).
+
+> **Known issue with the current shipped config:** as of this writing, the
+> repository's `input/differentially_heated_cavity/sim_params.txt`
+> (`dt = 1e-5`, `solve_energy = 1`) combined with its `stretch.txt` (120×120
+> cells, `beta = 0.8` stretching) **diverges**
+> (`CG WARNING: did not converge ... ||r||/||b|| = -nan` within the first
+> ~100 steps). The stretching concentrates cells near the walls, shrinking
+> the smallest `Δx` well below what a uniform 120² mesh would have — which
+> tightens the stability limit above beyond what `dt = 1e-5` satisfies. If
+> you hit this, try reducing `dt` further (e.g. `1e-6`) and/or reducing the
+> stretching `beta_*` values in `stretch.txt` before increasing resolution.
+
+See
 [../theory/solver.md §6](../theory/solver.md#6-stability-this-is-a-fully-explicit-scheme)
 for the general explanation.

@@ -4,18 +4,22 @@
 #include <vector>
 #include <string>
 #include <utility> // Required for std::pair
+#include <limits>  // Required for std::numeric_limits (obstacle bounds default)
 
 struct InternalCell {
     int global_id; // El ID en el sistema lineal (0 a N_active-1)
     double x, y;   // Centroide
     double Vol;    // Volumen
     // Vecinos (índices de otras InternalCells)
-    int n_east, n_west, n_north, n_south; 
-    
+    int n_east, n_west, n_north, n_south;
+
     // Banderas para saber si un vecino es frontera
-    bool bc_east, bc_west, bc_north, bc_south; 
+    bool bc_east, bc_west, bc_north, bc_south;
 
-
+    // True if this P-cell belongs to an immersed solid obstacle (e.g. the
+    // Square Cylinder scenario). Set by MeshConfig::mark_solid_block(), never
+    // true for the Lid-Driven Cavity or Differentially Heated Cavity.
+    bool is_solid = false;
 };
 // --- A. NUEVO ENUM PARA TIPOS DE FRONTERA ---
 enum BCType {
@@ -85,6 +89,14 @@ struct GridData {
     // 2. Vector de IDs (Enteros): Redundante pero necesario para VTK y Paraview
     //    ya que Paraview no lee punteros de C++.
     std::vector<int> node_material_id;
+
+    // --- Immersed solid obstacle (Square Cylinder scenario only) ---
+    // Snapped face coordinates of the solid block, set by mark_solid_block().
+    // NaN / unused for scenarios that never call mark_solid_block().
+    double obstacle_xmin = std::numeric_limits<double>::quiet_NaN();
+    double obstacle_xmax = std::numeric_limits<double>::quiet_NaN();
+    double obstacle_ymin = std::numeric_limits<double>::quiet_NaN();
+    double obstacle_ymax = std::numeric_limits<double>::quiet_NaN();
 };
 
 
@@ -102,7 +114,8 @@ public:
 
     // --- Simulation Parameters (read from sim_params.txt) ---
     double Re;        // Reynolds number  (Re = U_lid * L / nu)
-    double U_lid;     // Lid velocity [m/s]
+    double U_lid;     // Lid velocity [m/s]  (Lid-Driven Cavity scenario)
+    double U_inf = 1.0; // Free-stream inlet velocity [m/s]  (Square Cylinder scenario)
     double dt;        // Time step [s]
     double rho;       // Fluid density [kg/m³]
     int    max_steps; // Maximum number of time steps
@@ -156,6 +169,19 @@ public:
      * Debe llamarse DESPUÉS de generate_mesh().
      */
     void build_connectivity(GridData& data) const;
+
+    /**
+     * @brief Marks P-cells whose centroid lies inside [x0,x1]x[y0,y1] as a
+     * solid immersed obstacle (Square Cylinder scenario). Must be called
+     * AFTER build_connectivity(pMesh) and BEFORE constructing MomentumSolver /
+     * assembling PressurePoissonSystem's matrix. Snaps the requested bounds
+     * to the nearest existing face coordinate (pMesh.xvc/yvc) so the obstacle
+     * boundary coincides exactly with P-cell faces, and re-derives bc and
+     * neighbor flags at every fluid/solid interface the same way the outer domain edge is
+     * already flagged. Never called for the Lid-Driven Cavity or DHC.
+     */
+    void mark_solid_block(GridData& pMesh, double x0, double x1,
+                           double y0, double y1) const;
 
     //void apply_boundary(GridData& data, BoundaryCondition* bc, 
                        // std::function<bool(int i, int j, double x, double y)> selector) const;

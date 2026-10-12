@@ -145,18 +145,23 @@ done with a `sinh`-based mapping in
 - Zone boundaries are set by four corner nodes in
   [input/data.txt](../../input/data.txt): `node_NW`, `node_NE`, `node_SW`,
   `node_SE`.
-- **For both scenarios currently implemented** (lid-driven cavity,
-  differentially heated cavity), the corner nodes are placed at the domain
-  corners and `center`/`east` zone cell counts are set to 0 in
-  `input/stretch.txt`, which collapses the partition to a **single** west/south
-  block covering the whole domain — i.e. a plain rectangular cavity, just
-  built through a more general 3-zone machinery.
-- This 3×3 zone layout is scaffolding that would allow concentrating cells
-  around a **non-degenerate center zone** (e.g. around an interior obstacle).
-  It is not yet paired with any interior/immersed-boundary condition
-  handling — see
-  [../scenarios/square_cylinder.md](../scenarios/square_cylinder.md) for what
-  such a scenario would need.
+- **For the two closed-cavity scenarios** (lid-driven cavity, differentially
+  heated cavity), the corner nodes are placed at the domain corners and
+  `center`/`east` zone cell counts are set to 0 in `input/stretch.txt`, which
+  collapses the partition to a **single** west/south block covering the whole
+  domain — i.e. a plain rectangular cavity, just built through a more general
+  3-zone machinery.
+- **For the Square Cylinder scenario**, the corner nodes are placed so the
+  **center zone in both X and Y exactly matches the solid obstacle
+  footprint** — this is purely a mesh-density choice (concentrating cells
+  around the obstacle via `beta_x_center`/`beta_y_center`). The actual
+  fluid/solid masking is a separate mechanism:
+  `MeshConfig::mark_solid_block()` flags P-cells by centroid position
+  *after* the mesh and connectivity already exist (see
+  [solver.md](solver.md) and
+  [../scenarios/square_cylinder.md](../scenarios/square_cylinder.md)) — the
+  zone system only shapes mesh density, it does not by itself remove cells
+  from the fluid domain.
 
 ---
 

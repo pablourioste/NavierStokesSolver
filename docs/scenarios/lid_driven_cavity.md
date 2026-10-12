@@ -23,17 +23,19 @@ classes involved, see [../theory/mesh.md](../theory/mesh.md) and
 
 ## 2. How to run it
 
-1. Set `solve_energy = 0` in [input/sim_params.txt](../../input/sim_params.txt).
-2. Choose which Reynolds numbers to sweep in
-   [input/reynolds_cases.txt](../../input/reynolds_cases.txt) (one or more
-   integers, space/comma separated). If the file is empty/missing, the
-   solver falls back to $Re = 100, 200, \dots, 1000$.
-3. Boundary conditions are read from
-   [input/boundaries.txt](../../input/boundaries.txt) — it already ships
-   configured for this scenario (moving lid on `NORTH`, no-slip elsewhere).
-   [input/boundaries_lid_cavity.txt](../../input/boundaries_lid_cavity.txt) is
-   an equivalent, more heavily commented reference copy of the same file.
-4. Build and run:
+1. Set `scenario = lid_driven_cavity` in [input/scenario.txt](../../input/scenario.txt).
+2. `solve_energy = 0` in
+   [input/lid_driven_cavity/sim_params.txt](../../input/lid_driven_cavity/sim_params.txt)
+   (already set).
+3. Choose which Reynolds numbers to sweep in
+   [input/lid_driven_cavity/reynolds_cases.txt](../../input/lid_driven_cavity/reynolds_cases.txt)
+   (one or more integers, space/comma separated). If the file is
+   empty/missing, the solver falls back to $Re = 100, 200, \dots, 1000$.
+4. Boundary conditions are read from
+   [input/lid_driven_cavity/boundaries.txt](../../input/lid_driven_cavity/boundaries.txt)
+   — it already ships configured for this scenario (moving lid on `NORTH`,
+   no-slip elsewhere).
+5. Build and run:
    ```bash
    bash run.sh mesh_gen
    ```
@@ -46,13 +48,13 @@ classes involved, see [../theory/mesh.md](../theory/mesh.md) and
 
 For each Reynolds number in the sweep:
 - `nu` is derived from `Re` as $\nu = U_{lid}L/Re$
-  ([src/main.cpp:191](../../src/main.cpp#L191)).
+  ([src/main.cpp:302](../../src/main.cpp#L302)).
 - The time loop runs the standard predictor → pressure-projection pipeline
   (see [../theory/solver.md §0](../theory/solver.md#0-overview-the-per-timestep-pipeline))
   with no buoyancy/energy steps.
 - Steady state is detected when the max velocity change per step,
   $\lVert \Delta u\rVert_\infty/\Delta t$, drops below `ss_tol`
-  ([src/main.cpp:252](../../src/main.cpp#L252)).
+  ([src/main.cpp:392](../../src/main.cpp#L392)).
 
 ## 4. Outputs
 
@@ -66,9 +68,9 @@ Per case, written to `output/Re_<value>/`:
 
 The solver's centerline velocity profiles are compared against the
 widely-used reference data from Ghia et al. (1982)
-([input/ghia_reference.txt](../../input/ghia_reference.txt), also embedded
-directly in [src/main.cpp](../../src/main.cpp) for the console printout),
-available at $Re = 100, 400, 1000, 3200, 5000, 7500, 10000$.
+([input/lid_driven_cavity/ghia_reference.txt](../../input/lid_driven_cavity/ghia_reference.txt),
+also embedded directly in [src/main.cpp](../../src/main.cpp) for the console
+printout), available at $Re = 100, 400, 1000, 3200, 5000, 7500, 10000$.
 
 | $Re$ | Expected flow pattern |
 |---|---|

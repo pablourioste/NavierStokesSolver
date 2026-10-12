@@ -1,0 +1,10 @@
+# =============================================================================
+# Solid square obstacle geometry — read by main.cpp for the square_cylinder
+# scenario only. Bounds are snapped to the nearest mesh face coordinate by
+# MeshConfig::mark_solid_block(), so they should match the zone corners in
+# data.txt (node_NW/NE/SW/SE) for a clean, non-degenerate center zone.
+# =============================================================================
+obstacle_x0 = 0.75
+obstacle_x1 = 0.875
+obstacle_y0 = 0.4375
+obstacle_y1 = 0.5625

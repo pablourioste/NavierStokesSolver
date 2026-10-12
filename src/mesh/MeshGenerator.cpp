@@ -517,6 +517,86 @@ void MeshConfig::build_connectivity(GridData& data) const {
     cout << "Conectividad construida. Nodos Internos Activos: " << data.num_active_nodes << endl;
 }
 
+// ---------------------------------------------------------------------------
+// mark_solid_block — immersed solid obstacle (Square Cylinder scenario)
+//
+// Marks every P-cell whose centroid lies inside [x0,x1]x[y0,y1] as is_solid,
+// and re-derives bc_east/west/north/south (+ n_east/west/north/south = -1)
+// at every fluid/solid interface, EXACTLY the way build_connectivity already
+// flags the outer domain edge — so LaplaceOperator's existing
+// "if (!cell.bc_east) ..." branches automatically treat the obstacle as a
+// zero-flux wall with no further code changes there.
+//
+// Must run AFTER build_connectivity(pMesh) and BEFORE the pressure matrix is
+// assembled. Never called for the Lid-Driven Cavity or DHC scenarios.
+// ---------------------------------------------------------------------------
+void MeshConfig::mark_solid_block(GridData& pMesh, double x0, double x1,
+                                   double y0, double y1) const {
+    const int N = pMesh.N_cells_x;
+    const int M = pMesh.M_cells_y;
+
+    // Snap requested bounds to the nearest existing face coordinate, so the
+    // obstacle boundary coincides exactly with P-cell faces (required for an
+    // exact no-slip ghost-image method at the surface).
+    auto snap = [](const std::vector<double>& vc, double target) {
+        double best = vc[0];
+        double best_d = std::abs(vc[0] - target);
+        for (double v : vc) {
+            double d = std::abs(v - target);
+            if (d < best_d) { best_d = d; best = v; }
+        }
+        if (best_d > 1e-6) {
+            cout << "WARNING mark_solid_block: requested coordinate " << target
+                 << " snapped to " << best << " (distance " << best_d << ")\n";
+        }
+        return best;
+    };
+
+    pMesh.obstacle_xmin = snap(pMesh.xvc, x0);
+    pMesh.obstacle_xmax = snap(pMesh.xvc, x1);
+    pMesh.obstacle_ymin = snap(pMesh.yvc, y0);
+    pMesh.obstacle_ymax = snap(pMesh.yvc, y1);
+
+    auto get_idx = [&](int i, int j) { return (j - 1) * N + (i - 1); };
+
+    // 1. Flag solid cells by centroid position.
+    int n_solid = 0;
+    for (int j = 1; j <= M; ++j) {
+        for (int i = 1; i <= N; ++i) {
+            InternalCell& cell = pMesh.cells[get_idx(i, j)];
+            if (cell.x > pMesh.obstacle_xmin && cell.x < pMesh.obstacle_xmax &&
+                cell.y > pMesh.obstacle_ymin && cell.y < pMesh.obstacle_ymax) {
+                cell.is_solid = true;
+                ++n_solid;
+            }
+        }
+    }
+
+    // 2. Re-derive bc_*/n_* at every fluid/solid interface (both sides).
+    for (int j = 1; j <= M; ++j) {
+        for (int i = 1; i <= N; ++i) {
+            InternalCell& cell = pMesh.cells[get_idx(i, j)];
+
+            if (i < N && pMesh.cells[get_idx(i + 1, j)].is_solid != cell.is_solid) {
+                cell.bc_east = true; cell.n_east = -1;
+            }
+            if (i > 1 && pMesh.cells[get_idx(i - 1, j)].is_solid != cell.is_solid) {
+                cell.bc_west = true; cell.n_west = -1;
+            }
+            if (j < M && pMesh.cells[get_idx(i, j + 1)].is_solid != cell.is_solid) {
+                cell.bc_north = true; cell.n_north = -1;
+            }
+            if (j > 1 && pMesh.cells[get_idx(i, j - 1)].is_solid != cell.is_solid) {
+                cell.bc_south = true; cell.n_south = -1;
+            }
+        }
+    }
+
+    cout << "mark_solid_block: obstacle snapped to x=[" << pMesh.obstacle_xmin
+         << "," << pMesh.obstacle_xmax << "] y=[" << pMesh.obstacle_ymin << ","
+         << pMesh.obstacle_ymax << "], " << n_solid << " solid P-cells marked.\n";
+}
+
 void MeshConfig::export_mesh_to_gnuplot(const GridData& data, const std::string& filename) const {
     // Use the grid's own dimensions (critical for staggered U/V meshes)
     int N_cells = data.N_cells_x;
@@ -721,6 +801,8 @@ void MeshConfig::update_parameter(const std::string& key, const std::string& val
         Re = stod(value);
     } else if (key == "U_lid") {
         U_lid = stod(value);
+    } else if (key == "U_inf") {
+        U_inf = stod(value);
     } else if (key == "dt") {
         dt = stod(value);
     } else if (key == "rho") {

@@ -240,6 +240,68 @@ reading even if you don't care about heat transfer specifically.
 
 ---
 
+## 7. The immersed solid obstacle (Square Cylinder scenario)
+
+How an interior solid obstacle is bolted onto the same core solver used by
+the two closed-cavity scenarios, without rewriting the mesh generator or the
+per-timestep pipeline in §0.
+
+- **Marking solid cells**: `MeshConfig::mark_solid_block(pMesh, x0, x1, y0, y1)`
+  ([src/mesh/MeshGenerator.cpp](../../src/mesh/MeshGenerator.cpp)) runs once,
+  right after `build_connectivity(pMesh)` and before the pressure matrix is
+  assembled. It snaps the requested bounds to the nearest existing mesh face
+  (so the obstacle boundary coincides exactly with P-cell faces), flags every
+  P-cell inside as `is_solid`, and re-derives `bc_east/west/north/south` (and
+  `n_east/...= -1`) at every fluid/solid interface — **the exact same
+  mechanism `build_connectivity` already uses for the outer domain edge**,
+  just triggered by an interior condition instead of a grid-extreme index.
+  Never called for Lid-Driven Cavity or DHC.
+- **Pressure**: `LaplaceOperator` already looped per-cell checking `bc_*`
+  flags to decide whether to add a neighbor's contribution — a solid cell
+  only needed a 2-line early return (trivial identity row, decoupling its
+  pressure value), and fluid cells adjacent to the obstacle automatically get
+  a zero-flux face there with no other change. `DivergenceOperator` gets the
+  same kind of early return (solid cells contribute no divergence).
+- **Momentum (the part that needed real new logic)**: unlike the pressure
+  operator, `DiffusionOperator` and `MomentumSolver::uRHS/vRHS` never checked
+  `bc_*` — they used raw index-range comparisons against the *global* mesh
+  extent to decide between reading a real neighbor or using the wall
+  ghost-image formula. Extending this to an *interior* obstacle required a
+  shared helper,
+  [`src/mesh/ObstacleMask.hpp`](../../src/mesh/ObstacleMask.hpp)
+  (`uNodeBlocked`/`vNodeBlocked`/`uNodeOnObstacleSurface`/`vNodeOnObstacleSurface`),
+  queried at every neighbor lookup: if a U/V neighbor falls strictly inside
+  the solid block, the stencil now falls into the *same* ghost-image branch
+  already used for outer walls, just referencing the obstacle's snapped face
+  coordinate (`pMesh.obstacle_xmin/xmax/ymin/ymax`) instead of
+  `uMesh_.yvc[0]`/`[M]`. For LDC/DHC, `is_solid` is never true anywhere, so
+  every one of these new branches is dead code and the stencils are
+  byte-identical to before.
+- **Obstacle-surface velocity nodes**: `MomentumSolver::applyBoundaryConditions`
+  gained a second pass, zeroing any U/V node that sits exactly on the
+  fluid/solid interface (no-penetration) — same treatment as the outer-wall
+  boundary nodes, just driven by `uNodeOnObstacleSurface`/`vNodeOnObstacleSurface`
+  instead of a fixed index.
+- **Inlet/outlet**: see
+  [../scenarios/square_cylinder.md](../scenarios/square_cylinder.md) for how
+  `INLET`/`OUTLET` boundary types (which exist in `BCType` but were
+  essentially unexercised before this scenario) are handled — including a
+  bug fixed along the way: `ghostValue(INLET, faceVal)` previously returned
+  the prescribed *normal* inflow speed as a *tangential* ghost value, which
+  would have corrupted the cross-stencil at an inlet.
+- **Linear solver choice**: the near-obstacle mesh's high cell aspect ratio
+  raises the pressure Laplacian's condition number enough that plain CG
+  oscillates without converging in the iteration budget that works fine for
+  LDC/DHC's milder meshes — this scenario uses Jacobi-preconditioned CG
+  (`PCG`) instead, selected in `main.cpp` by scenario. LDC/DHC are
+  unaffected (still plain `CG`).
+- **Forces**: [`ObstacleForces`](../../src/postprocessing/ObstacleForces.hpp)
+  surface-integrates pressure and viscous shear over the obstacle's 4 flat
+  faces using the fluid-side cell values (never the solid cell's pinned,
+  physically meaningless pressure) into `Cd`/`Cl`.
+
+---
+
 ## Key files quick-reference
 
 | Piece | Header | Implementation |
@@ -251,5 +313,7 @@ reading even if you don't care about heat transfer specifically.
 | Linear solver | [src/solver/sparse/solver_class_sparse.hpp](../../src/solver/sparse/solver_class_sparse.hpp) | [src/solver/sparse/solver_sparse.cpp](../../src/solver/sparse/solver_sparse.cpp) |
 | Energy equation | [src/EnergySolver.hpp](../../src/EnergySolver.hpp) | [src/EnergySolver.cpp](../../src/EnergySolver.cpp) |
 | Buoyancy coupling | [src/Buoyancy.hpp](../../src/Buoyancy.hpp) | header-only |
+| Obstacle-mask helpers | [src/mesh/ObstacleMask.hpp](../../src/mesh/ObstacleMask.hpp) | header-only |
+| Drag/lift/Strouhal | [src/postprocessing/ObstacleForces.hpp](../../src/postprocessing/ObstacleForces.hpp) | [src/postprocessing/ObstacleForces.cpp](../../src/postprocessing/ObstacleForces.cpp) |
 | Main driver / time loop | — | [src/main.cpp](../../src/main.cpp) |
 | Operator verification (MMS) | — | [src/verification/verify_operators.cpp](../../src/verification/verify_operators.cpp) |
