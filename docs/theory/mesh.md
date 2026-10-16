@@ -204,6 +204,7 @@ done with a `sinh`-based mapping in
 - Because the grid is rectilinear (not a general unstructured mesh), only
   the 1D face coordinate arrays (`X_COORDINATES`, `Y_COORDINATES`) need to be
   written — ParaView reconstructs the full 2D grid from the tensor product.
-- Outputs per case land in `output/Re_<value>/` or `output/Ra_<value>/`:
-  `pressure.vtk`, `u_velocity.vtk`, `v_velocity.vtk`, and (DHC only)
-  `temperature.vtk`.
+- Outputs per case land in `output/<scenario>/Re_<value>/fields/` or
+  `output/<scenario>/Ra_<value>/fields/`: `pressure.vtk`, `u_velocity.vtk`,
+  `v_velocity.vtk`, and (DHC only) `temperature.vtk`. The meshes go to
+  `output/<scenario>/mesh/`.

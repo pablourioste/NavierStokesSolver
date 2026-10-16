@@ -1,0 +1,15 @@
+Re    = 400
+U_lid = 1
+nu    = 0.0025
+dt = 3e-4
+rho   = 1
+
+# --- Energy equation / Differentially Heated Cavity ---
+# solve_energy = 0  -> Lid-Driven Cavity (momentum + pressure only)
+# solve_energy = 1  -> Differentially Heated Cavity (adds energy + buoyancy)
+solve_energy = 0
+# Prandtl number (used only when solve_energy = 1; momentum diffusion = Pr)
+Pr = 0.71
+
+max_steps = 100000
+ss_tol = 1e-5

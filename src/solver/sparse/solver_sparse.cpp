@@ -291,11 +291,14 @@ Vector CG::solve(const CSRMatrix& A, const Vector& b) const {
 // For non-uniform meshes the diagonal varies → Jacobi lowers condition number.
 // All working vectors pre-allocated (no heap inside the loop).
 Vector PCG::solve(const CSRMatrix& A, const Vector& b, const Vector& x0) const {
-    int n = A.n;
-    Vector x = x0;
-    Vector r(n), z(n), p(n), Ap(n);
+    // Jacobi-preconditioned CG with warm start. Loops are fused and OpenMP-
+    // parallel (same arithmetic as the serial version, up to the summation
+    // order of the reductions); set OMP_NUM_THREADS to control the threads.
+    const int n = A.n;
+    Vector x = x0, r(n), z(n), p(n), Ap(n);
 
-    // r = b - A*x0;  z = M^{-1} r;  p = z
+    double rz = 0.0, rr = 0.0, bb = 0.0;
+    #pragma omp parallel for reduction(+:rz,rr,bb) schedule(static)
     for (int i = 0; i < n; ++i) {
         double Ax_i = 0.0;
         for (int k = A.row_ptr[i]; k < A.row_ptr[i+1]; ++k)
@@ -303,36 +306,49 @@ Vector PCG::solve(const CSRMatrix& A, const Vector& b, const Vector& x0) const {
         r[i] = b[i] - Ax_i;
         z[i] = r[i] / A.diagonal[i];
         p[i] = z[i];
+        rz += r[i] * z[i];
+        rr += r[i] * r[i];
+        bb += b[i] * b[i];
     }
 
-    double rz = dot(r, z);
-    const double b_norm = sqrt(dot(b, b));
+    const double b_norm = sqrt(bb);
     const double tol_abs = (b_norm > 0.0) ? 1e-6 * b_norm : 1e-10;
     const int max_iter = std::max(200, (int)(5.0 * sqrt((double)n)));
 
-    if (sqrt(dot(r, r)) < tol_abs) return x;
+    if (sqrt(rr) < tol_abs) return x;
 
     for (int iter = 1; iter <= max_iter; ++iter) {
-        // Ap = A * p
+        double pAp = 0.0;
+        #pragma omp parallel for reduction(+:pAp) schedule(static)
         for (int i = 0; i < n; ++i) {
             double s = 0.0;
             for (int k = A.row_ptr[i]; k < A.row_ptr[i+1]; ++k)
                 s += A.values[k] * p[A.col_indices[k]];
             Ap[i] = s;
+            pAp += p[i] * s;
         }
-        double pAp = dot(p, Ap);
-        if (abs(pAp) < 1e-300) break;
-        double alpha = rz / pAp;
-        for (int i = 0; i < n; ++i) { x[i] += alpha * p[i]; r[i] -= alpha * Ap[i]; }
-        if (sqrt(dot(r, r)) < tol_abs) return x;
-        for (int i = 0; i < n; ++i) z[i] = r[i] / A.diagonal[i];
-        double rz_new = dot(r, z);
-        double beta = rz_new / rz;
+        if (std::abs(pAp) < 1e-300) break;
+        const double alpha = rz / pAp;
+
+        double rz_new = 0.0;
+        rr = 0.0;
+        #pragma omp parallel for reduction(+:rz_new,rr) schedule(static)
+        for (int i = 0; i < n; ++i) {
+            x[i] += alpha * p[i];
+            r[i] -= alpha * Ap[i];
+            z[i] = r[i] / A.diagonal[i];
+            rr += r[i] * r[i];
+            rz_new += r[i] * z[i];
+        }
+        if (sqrt(rr) < tol_abs) return x;
+
+        const double beta = rz_new / rz;
+        #pragma omp parallel for schedule(static)
         for (int i = 0; i < n; ++i) p[i] = z[i] + beta * p[i];
         rz = rz_new;
     }
     cout << "PCG WARNING: did not converge in " << max_iter
-         << " iters. ||r||/||b|| = " << sqrt(dot(r,r))/b_norm << "\n";
+         << " iters. ||r||/||b|| = " << sqrt(rr)/b_norm << "\n";
     return x;
 }
 

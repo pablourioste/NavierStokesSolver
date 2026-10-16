@@ -51,9 +51,17 @@ involved (`EnergySolver`, `Buoyancy.hpp`) see
 
 ## 3. Outputs
 
-Per Rayleigh case, written to `output/Ra_<value>/`:
-- `pressure.vtk`, `u_velocity.vtk`, `v_velocity.vtk`, `temperature.vtk`.
-- `dhc_metrics.csv` — `Ra, Pr, u_max, v_max, Nu_avg`.
+Per Rayleigh case, written to `output/differentially_heated_cavity/Ra_<value>/`:
+- `fields/pressure.vtk`, `fields/u_velocity.vtk`, `fields/v_velocity.vtk`,
+  `fields/temperature.vtk`.
+- `data/dhc_metrics.csv` — `Ra, Pr, u_max, v_max, Nu_avg`.
+- `figures/flow_fields` (from `plotters/plot_dhc.py`) — isotherms and stream
+  function.
+
+Across cases, `plot_dhc.py` also writes `figures/fields_overview`,
+`figures/benchmark` ($\overline{Nu}$, $u_{\max}$, $v_{\max}$ vs. de Vahl Davis) and
+`validation_summary.csv` (relative errors) under
+`output/differentially_heated_cavity/`.
 
 ## 4. Validation — de Vahl Davis (1983)
 

@@ -45,6 +45,7 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -459,7 +460,7 @@ static double runDGL(int N)
 }
 
 // =============================================================================
-// CSV helper — añade una fila a output/convergence.csv
+// CSV helper — añade una fila a output/verification/data/convergence.csv
 // =============================================================================
 static void csvRow(std::ofstream& f,
                    const std::string& suite, int N, double error,
@@ -807,7 +808,8 @@ int main()
     // ---- Abrir CSV de salida ----
     // Crear directorio output si no existe
     std::system("mkdir -p output");
-    std::ofstream csv("output/convergence.csv");
+    std::filesystem::create_directories("output/verification/data");
+    std::ofstream csv("output/verification/data/convergence.csv");
     csv << "suite,N,error_linf\n";
 
     auto rate = [](double e_coarse, double e_fine) -> std::string {
@@ -981,7 +983,7 @@ int main()
 
     std::cout << "\nTasas esperadas: ~2.0 para Suites 1-4, 6; ~1.0 para Suite 10 (malla no uniforme).\n";
     std::cout << "Errores esperados < 1e-12: Suites 5, 7, 8, 9 (identidades algebraicas).\n";
-    std::cout << "\nDatos de convergencia escritos en: output/convergence.csv\n";
+    std::cout << "\nDatos de convergencia escritos en: output/verification/data/convergence.csv\n";
 
     return 0;
 }

@@ -1,0 +1,9 @@
+# =============================================================================
+# Condiciones de Contorno — Differentially Heated Cavity (DHC)
+# Closed cavity, no-slip on all four walls (no lid).
+# Formato: BOCO_NAME  CARA  IDX_START  IDX_END  TIPO              VALOR
+# =============================================================================
+wall_north    NORTH   0       9999     WALL               0.0
+wall_south    SOUTH   0       9999     WALL               0.0
+wall_west     WEST    0       9999     WALL               0.0
+wall_east     EAST    0       9999     WALL               0.0

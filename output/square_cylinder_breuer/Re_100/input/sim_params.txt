@@ -1,0 +1,13 @@
+# --- Breuer benchmark: U_inf is the centreline velocity U_max of the
+# parabolic inflow; nu = U_max * D / Re for each case in reynolds_cases.txt.
+U_inf = 1.0
+rho   = 1
+
+dt    = 1e-3
+
+solve_energy = 0
+Pr = 0.71
+
+# Steady cases (Re < 60) stop once ||du||_inf/dt < ss_tol.
+max_steps = 50000
+ss_tol = 0.0

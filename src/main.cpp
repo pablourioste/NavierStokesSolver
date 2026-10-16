@@ -18,7 +18,12 @@
 
 using namespace std;
 
-const string OUTPUT_DIR = "output/";
+// Results are classified as output/<scenario>/:
+//   mesh/                     mesh_P/U/V.vtk (+ obstacle_mask.vtk)
+//   <Re_N | Ra_N>/fields/     VTK fields for ParaView / the plotters
+//   <Re_N | Ra_N>/data/       CSV profiles, forces and benchmark metrics
+//   <Re_N | Ra_N>/figures/    written by plotters/*.py, never by the solver
+const string OUTPUT_ROOT = "output/";
 
 // Which physical problem main() solves this run — selected via
 // input/scenario.txt. Additive: LID_DRIVEN_CAVITY and
@@ -125,12 +130,16 @@ int main() {
     // =========================================================================
     const std::string scenario_name = read_scenario_name("input/scenario.txt");
     const std::string INPUT_DIR     = "input/" + scenario_name + "/";
+    const std::string OUTPUT_DIR = OUTPUT_ROOT + scenario_name + "/";
+    const std::string MESH_DIR   = OUTPUT_DIR + "mesh/";
+    std::filesystem::create_directories(MESH_DIR);
     std::cout << "Active scenario: " << scenario_name
               << "  (reading from " << INPUT_DIR << ")\n";
 
     Scenario scenario = Scenario::LID_DRIVEN_CAVITY;
     if (scenario_name == "differentially_heated_cavity") scenario = Scenario::DIFFERENTIALLY_HEATED_CAVITY;
-    else if (scenario_name == "square_cylinder")          scenario = Scenario::SQUARE_CYLINDER;
+    // square_cylinder and its benchmark variants (e.g. square_cylinder_breuer)
+    else if (scenario_name.rfind("square_cylinder", 0) == 0) scenario = Scenario::SQUARE_CYLINDER;
     // else stays LID_DRIVEN_CAVITY — matches the historical default behavior.
 
     // =========================================================================
@@ -164,9 +173,9 @@ int main() {
         myConfig.mark_solid_block(pMesh, ox0, ox1, oy0, oy1);
     }
 
-    myConfig.export_mesh_to_VTK(pMesh, OUTPUT_DIR + "mesh_P.vtk");
-    myConfig.export_mesh_to_VTK(uMesh, OUTPUT_DIR + "mesh_U.vtk");
-    myConfig.export_mesh_to_VTK(vMesh, OUTPUT_DIR + "mesh_V.vtk");
+    myConfig.export_mesh_to_VTK(pMesh, MESH_DIR + "mesh_P.vtk");
+    myConfig.export_mesh_to_VTK(uMesh, MESH_DIR + "mesh_U.vtk");
+    myConfig.export_mesh_to_VTK(vMesh, MESH_DIR + "mesh_V.vtk");
 
 
     // =========================================================================
@@ -284,7 +293,7 @@ int main() {
         Vector mask(pMesh.num_active_nodes, 0.0);
         for (int k = 0; k < pMesh.num_active_nodes; ++k)
             mask[k] = pMesh.cells[k].is_solid ? 1.0 : 0.0;
-        writeFieldVTK(pMesh, mask, "obstacle_mask", OUTPUT_DIR + "obstacle_mask.vtk");
+        writeFieldVTK(pMesh, mask, "obstacle_mask", MESH_DIR + "obstacle_mask.vtk");
     }
 
     for (double caseVal : case_values) {
@@ -334,23 +343,33 @@ int main() {
         // recorded incrementally every step.
         const bool is_cylinder = (scenario == Scenario::SQUARE_CYLINDER);
         std::ostringstream cyl_dir_stream;
-        cyl_dir_stream << OUTPUT_DIR << "square_cylinder/Re_" << Re;
-        const std::string cyl_case_dir = cyl_dir_stream.str() + "/";
+        cyl_dir_stream << OUTPUT_DIR << "Re_" << Re;
+        const std::string cyl_data_dir = cyl_dir_stream.str() + "/data/";
         ObstacleForces obstacleForces(pMesh, uMesh, vMesh, nu, rho);
         std::ofstream forcesFile;
         std::vector<double> force_time, force_Cl;
         if (is_cylinder) {
-            std::filesystem::create_directories(cyl_case_dir);
-            forcesFile.open(cyl_case_dir + "forces.csv");
+            std::filesystem::create_directories(cyl_data_dir);
+            forcesFile.open(cyl_data_dir + "forces.csv");
             forcesFile << "step,time,Cd,Cl\n";
         }
         const double dynPress = 0.5 * rho * U_inf * U_inf *
                                  (pMesh.obstacle_xmax - pMesh.obstacle_xmin) * myConfig.W_depth;
 
+        bool diverged = false;
         for (int step = 0; step < max_steps; ++step) {
             u_old = u_star;
 
             momentum.advance(u_star, v_star, dt);
+            // Re-impose the velocity BCs on u* before the pressure solve: the
+            // predictor also updates the nodes ON an immersed obstacle's
+            // faces, and a non-zero u* there would enter the divergence of
+            // the adjacent fluid cells as a flux the PPE cannot remove (the
+            // interface is a homogeneous-Neumann pressure boundary), leaving
+            // a mass-conservation error once the BCs are reset after the
+            // projection. Also refreshes the zero-gradient outlet with u*.
+            // A no-op for walls with fixed values (cavity scenarios).
+            momentum.applyBoundaryConditions(u_star, v_star);
             if (energy_on)
                 addBuoyancy(T, v_star, dt, Ra, Pr, pMesh, vMesh);  // inject into v*
             poisson.setVelocityFields(u_star, v_star);
@@ -382,13 +401,23 @@ int main() {
 
             if (step % 100 == 0) {
                 double du_max = 0.0;
-                for (int i = 0; i < (int)u_star.size(); ++i)
-                    du_max = std::max(du_max, std::abs(u_star[i] - u_old[i]));
+                bool finite = true;
+                for (int i = 0; i < (int)u_star.size(); ++i) {
+                    const double d = std::abs(u_star[i] - u_old[i]);
+                    if (!std::isfinite(d)) finite = false;   // std::max would drop a NaN
+                    du_max = std::max(du_max, d);
+                }
                 double ss_err = du_max / dt;
                 const std::string tag = energy_on ? ("Ra=" + std::to_string((long long)Ra))
                                                   : ("Re=" + std::to_string(Re));
                 cout << tag << "  Step " << step
                      << "  ||du||_inf/dt = " << ss_err << "\n";
+                if (!finite) {
+                    std::cerr << "ERROR: " << tag << " diverged (non-finite velocity) at step "
+                              << step << " — reduce dt. No results written for this case.\n";
+                    diverged = true;
+                    break;
+                }
                 if (step > 0 && ss_err < ss_tol) {
                     cout << "Steady state reached at step " << step
                          << " for " << tag << "\n";
@@ -398,19 +427,21 @@ int main() {
         }
 
         if (is_cylinder) forcesFile.close();
+        if (diverged) continue;   // never write NaN fields as if they were results
 
         std::ostringstream re_dir;
-        if (energy_on)        re_dir << OUTPUT_DIR << "Ra_" << (long long)Ra;
-        else if (is_cylinder) re_dir << OUTPUT_DIR << "square_cylinder/Re_" << Re;
-        else                   re_dir << OUTPUT_DIR << "Re_" << Re;
-        std::filesystem::create_directories(re_dir.str());
-        const std::string case_dir = re_dir.str() + "/";
+        if (energy_on) re_dir << OUTPUT_DIR << "Ra_" << (long long)Ra;
+        else           re_dir << OUTPUT_DIR << "Re_" << Re;
+        const std::string fields_dir = re_dir.str() + "/fields/";
+        const std::string case_dir   = re_dir.str() + "/data/";   // CSV outputs
+        std::filesystem::create_directories(fields_dir);
+        std::filesystem::create_directories(case_dir);
 
-        writeFieldVTK(pMesh, p_sol,   "pressure",   case_dir + "pressure.vtk");
-        writeFieldVTK(uMesh, u_star,  "u_velocity", case_dir + "u_velocity.vtk");
-        writeFieldVTK(vMesh, v_star,  "v_velocity", case_dir + "v_velocity.vtk");
+        writeFieldVTK(pMesh, p_sol,   "pressure",   fields_dir + "pressure.vtk");
+        writeFieldVTK(uMesh, u_star,  "u_velocity", fields_dir + "u_velocity.vtk");
+        writeFieldVTK(vMesh, v_star,  "v_velocity", fields_dir + "v_velocity.vtk");
         if (energy_on)
-            writeFieldVTK(pMesh, T,   "temperature", case_dir + "temperature.vtk");
+            writeFieldVTK(pMesh, T,   "temperature", fields_dir + "temperature.vtk");
 
         if (is_cylinder) {
             const double St = estimate_shedding_frequency(force_time, force_Cl) *

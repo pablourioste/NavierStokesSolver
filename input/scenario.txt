@@ -3,5 +3,6 @@
 # Picks which input/<scenario>/ subfolder all other config is read from.
 #
 # Valid values: lid_driven_cavity | differentially_heated_cavity | square_cylinder
+#               | square_cylinder_breuer (Breuer et al. 2000 validation set-up)
 # =============================================================================
 scenario = square_cylinder

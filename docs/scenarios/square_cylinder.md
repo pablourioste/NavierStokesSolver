@@ -1,12 +1,13 @@
 # Scenario: Square Cylinder Problem
 
-> **Status: implemented, validation pending.** The solver runs this scenario
-> end to end — immersed solid obstacle, inlet/outlet channel flow, drag/lift
-> recording, and a Strouhal-number estimate — without NaN or divergence on
-> the shipped mesh. **The Strouhal number has not yet been calibrated against
-> the literature** (~0.13–0.15 at Re ~ 100–200); matching it is future work
-> (mesh/`dt`/domain-length tuning), not something this round attempted. Treat
-> any `St` value this solver reports as provisional.
+> **Status: validated against Breuer et al. (2000)** in the dedicated
+> `square_cylinder_breuer` scenario (blockage 1/8, parabolic inflow):
+> $C_D$ and $L_r$ at $Re = 40$ within 0.5 %, onset between $Re = 50$ and
+> 70, $St$ within 1.4 % at $Re = 100$ (grid-converged). See
+> [square_cylinder_validation.md](square_cylinder_validation.md) for the
+> references, the four solver bugs fixed on the way, and what remains. The
+> shipped `square_cylinder` scenario (uniform inflow between no-slip walls)
+> matches no published benchmark.
 
 ---
 
@@ -84,23 +85,28 @@ a channel — a standard bluff-body benchmark:
 ## 4. Outputs
 
 Per Reynolds case, written to `output/square_cylinder/Re_<value>/`:
-- `pressure.vtk`, `u_velocity.vtk`, `v_velocity.vtk`.
-- `forces.csv` — `step, time, Cd, Cl`.
-- `strouhal.csv` — `Re, St` (provisional estimate).
-- `square_cylinder_plot.png` (from the plotter) — vorticity field with the
-  obstacle outlined, plus the `Cd(t)`/`Cl(t)` time series.
+- `fields/pressure.vtk`, `fields/u_velocity.vtk`, `fields/v_velocity.vtk`.
+- `data/forces.csv` — `step, time, Cd, Cl`.
+- `data/strouhal.csv` — `Re, St` (provisional estimate).
+- `figures/vorticity`, `figures/force_coefficients`, `figures/lift_spectrum`
+  (from the plotter) — vorticity field with the obstacle drawn in,
+  $C_D(t^*)$ / $C_L(t^*)$, and the amplitude spectrum of $C_L$ over the second
+  half of the record (its peak gives an FFT-based $St$, independent of the
+  solver's zero-crossing estimate).
 
-A one-off `output/obstacle_mask.vtk` (cell-data scalar, 1 = solid) lets you
-confirm the obstacle footprint visually in ParaView independent of any flow
-case. `output/square_cylinder/strouhal_summary.png` plots `St` vs `Re` across
-the sweep against the literature reference band — explicitly annotated as
-unvalidated.
+A one-off `output/square_cylinder/mesh/obstacle_mask.vtk` (cell-data scalar,
+1 = solid) lets you confirm the obstacle footprint visually in ParaView
+independent of any flow case. `output/square_cylinder/figures/strouhal` plots
+`St` vs `Re` across the sweep against Sohankar et al. (1998, $\beta = 5\,\%$) —
+explicitly annotated as unvalidated; it is only drawn when at least two
+Reynolds numbers have been run — and `force_summary.csv` lists mean $C_D$,
+rms $C_L$, `St` (solver) and `St_fft` per case.
 
 ## 5. Validation status (read before trusting any number here)
 
 What has been checked (this round):
 - The obstacle footprint exports correctly and sits where configured
-  (`output/obstacle_mask.vtk`, checkpoint 1).
+  (`output/square_cylinder/mesh/obstacle_mask.vtk`, checkpoint 1).
 - A short run produces no NaNs/divergence at Re=100 on the shipped mesh
   (checkpoint 2) and stays numerically well-behaved over hundreds of steps
   (residuals and `Cd`/`Cl` both settle smoothly, no oscillatory blow-up).
@@ -108,9 +114,20 @@ What has been checked (this round):
   transient; the qualitative wake structure (recirculation behind the
   obstacle) looks as expected in the vorticity plot.
 
+Shipped scenario, $Re = 150$, coarse 126×88 grid, `dt = 5e-4`,
+$tU_\infty/D = 200$, re-run after the solver fixes (results in
+`output/square_cylinder/Re_150/`): periodic shedding from
+$tU_\infty/D \approx 130$, $St = 0.196$, $\overline{C_D} = 1.84$,
+$C_{L,\mathrm{rms}} = 0.30$, $\overline{C_L} \approx 0$. Not comparable with a
+published value (uniform inflow between no-slip walls); the earlier numbers
+in this section ($\overline{C_D} = 2.57$, $\overline{C_L} \approx -0.4$) came
+from the bugs listed in [square_cylinder_validation.md §4](square_cylinder_validation.md)
+and are void.
+
 What has **not** been checked:
 - Whether the shipped domain size, blockage ratio, mesh resolution, and `dt`
-  actually reproduce the literature Strouhal band (~0.13–0.15 at Re~100–200)
+  actually reproduce the reference values in
+  [square_cylinder_validation.md](square_cylinder_validation.md)
   — this requires running the full configured step count (tens of thousands
   of steps) to capture enough shedding periods, and likely several rounds of
   mesh/`dt`/domain-length tuning. Not attempted this round by explicit scope

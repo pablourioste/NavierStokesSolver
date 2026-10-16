@@ -58,11 +58,14 @@ For each Reynolds number in the sweep:
 
 ## 4. Outputs
 
-Per case, written to `output/Re_<value>/`:
-- `pressure.vtk`, `u_velocity.vtk`, `v_velocity.vtk` — rectilinear VTK fields,
-  open directly in ParaView.
-- `centerline_u.csv` — $u(y)$ along the vertical mid-plane $x=L/2$.
-- `centerline_v.csv` — $v(x)$ along the horizontal mid-plane $y=H/2$.
+Per case, written to `output/lid_driven_cavity/Re_<value>/`:
+- `fields/pressure.vtk`, `fields/u_velocity.vtk`, `fields/v_velocity.vtk` —
+  rectilinear VTK fields, open directly in ParaView.
+- `data/centerline_u.csv` — $u(y)$ along the vertical mid-plane $x=L/2$.
+- `data/centerline_v.csv` — $v(x)$ along the horizontal mid-plane $y=H/2$.
+- `figures/` — written by `plotters/plot_results.py` (see §5).
+
+The meshes go to `output/lid_driven_cavity/mesh/`.
 
 ## 5. Validation — Ghia, Ghia & Shin (1982)
 
@@ -78,12 +81,25 @@ printout), available at $Re = 100, 400, 1000, 3200, 5000, 7500, 10000$.
 | 400–1000 | growing corner eddies, vortex center shifts |
 | 3200+ | tertiary corner eddies appear, resolution-sensitive |
 
-Run `python3 plotters/plot_results.py` to overlay the computed $u(y)$/$v(x)$
-profiles on the Ghia reference points — see
-`no_Stretched/validation.png` and `no_Stretched/validation_all_re_u.png`
-for pre-computed examples at multiple Reynolds numbers.
+Run `python3 plotters/plot_results.py`. Per case it writes
+`figures/flow_fields` (stream function with Ghia's contour levels, vorticity,
+pressure) and `figures/centerlines` (profiles vs. Ghia, only when the case's
+$Re$ is tabulated there). Across cases it writes
+`output/lid_driven_cavity/figures/{centerline_comparison,centerline_trend,streamfunction_overview}`
+and `output/lid_driven_cavity/validation_summary.csv` (primary-vortex
+$\psi_{\min}$ and centre, RMS/max centreline errors vs. Ghia). Every figure is
+saved as a vector PDF (for LaTeX) and a 300 dpi PNG.
+
+![Centreline profiles vs. Ghia et al.](../figures/lid_centerline_comparison.png)
 
 ## 6. Known caveats
+
+- **Suspect reference value, Re = 400, $v$ table, $x/L = 0.9063$.** The
+  embedded table has $-0.23827$; the solution ($-0.3816$) matches the other
+  14 points of the column to 0.001 and the tabulated value breaks the
+  monotonic trend of its own column. Likely a transcription error — check
+  against Ghia et al. (1982), Table II, before quoting the Re = 400 $v$
+  error (0.037 with it, ≈ 0.003 without).
 
 - At higher $Re$ (≥3200), resolving the secondary/tertiary corner eddies
   needs a correspondingly finer mesh (`stretch.txt`) — a coarse uniform grid

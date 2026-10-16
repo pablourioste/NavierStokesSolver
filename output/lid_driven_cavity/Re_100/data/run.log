@@ -1,0 +1,695 @@
+Active scenario: lid_driven_cavity  (reading from input/lid_driven_cavity/)
+MeshConfig object created with default parameters.
+Archivo de datos 'input/lid_driven_cavity/data.txt' cargado.
+Archivo de estiramiento 'input/lid_driven_cavity/stretch.txt' cargado.
+Advertencia: Clave desconocida en el archivo de configuración: nu
+Parámetros de simulación 'input/lid_driven_cavity/sim_params.txt' cargados.
+Generating X coordinates...
+Generating stretched mesh in 1D with refinement at the end (x=L).
+Offset applied: 0
+Generating uniform mesh in 1D.
+Offset applied: 1
+Generating stretched mesh in 1D with refinement at the end (x=L).
+Offset applied: 1
+Generating Y coordinates...
+Generating stretched mesh in 1D with refinement at the end (x=L).
+Offset applied: 0
+Generating uniform mesh in 1D.
+Offset applied: 1
+Generating stretched mesh in 1D with refinement at the end (x=L).
+Offset applied: 1
+yvc merging...
+Generando Fronteras...
+Generando Elementos de Volumen Internos...
+--- Cargando Condiciones de Frontera desde input/lid_driven_cavity/boundaries.txt ---
+ -> Boco [lid] WALL_FIXED_VALUE en NORTH [0-120]
+ -> Boco [wall_south] WALL en SOUTH [0-120]
+ -> Boco [wall_west] WALL en WEST [0-120]
+ -> Boco [wall_east] WALL en EAST [0-120]
+Conectividad construida. Nodos Internos Activos: 14400
+Conectividad construida. Nodos Internos Activos: 14520
+Conectividad construida. Nodos Internos Activos: 14520
+Mesh exported successfully to: output/lid_driven_cavity/mesh/mesh_P.vtk
+Mesh exported successfully to: output/lid_driven_cavity/mesh/mesh_U.vtk
+Mesh exported successfully to: output/lid_driven_cavity/mesh/mesh_V.vtk
+
+============================================================
+Running case Re = 100  U_lid = 1  nu = 0.01  dt = 0.0003  max_steps = 100000
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 0.000167102
+Re=100  Step 0  ||du||_inf/dt = 627.631
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 4.41791e-05
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.09865e-05
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.32658e-05
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 9.54168e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 7.95302e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 6.25727e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 5.10536e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 4.18615e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 3.5314e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 2.92107e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 2.49353e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 2.06104e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.81448e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.60417e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.43069e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.22216e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.14583e-06
+CG WARNING: did not converge in 600 iters. ||r||/||b|| = 1.02269e-06
+Re=100  Step 100  ||du||_inf/dt = 7.77617
+Re=100  Step 200  ||du||_inf/dt = 3.82424
+Re=100  Step 300  ||du||_inf/dt = 2.52719
+Re=100  Step 400  ||du||_inf/dt = 1.88473
+Re=100  Step 500  ||du||_inf/dt = 1.5023
+Re=100  Step 600  ||du||_inf/dt = 1.25193
+Re=100  Step 700  ||du||_inf/dt = 1.07382
+Re=100  Step 800  ||du||_inf/dt = 0.938807
+Re=100  Step 900  ||du||_inf/dt = 0.832313
+Re=100  Step 1000  ||du||_inf/dt = 0.749269
+Re=100  Step 1100  ||du||_inf/dt = 0.679495
+Re=100  Step 1200  ||du||_inf/dt = 0.62102
+Re=100  Step 1300  ||du||_inf/dt = 0.571719
+Re=100  Step 1400  ||du||_inf/dt = 0.528322
+Re=100  Step 1500  ||du||_inf/dt = 0.491421
+Re=100  Step 1600  ||du||_inf/dt = 0.457909
+Re=100  Step 1700  ||du||_inf/dt = 0.429028
+Re=100  Step 1800  ||du||_inf/dt = 0.402497
+Re=100  Step 1900  ||du||_inf/dt = 0.379071
+Re=100  Step 2000  ||du||_inf/dt = 0.357321
+Re=100  Step 2100  ||du||_inf/dt = 0.338141
+Re=100  Step 2200  ||du||_inf/dt = 0.320066
+Re=100  Step 2300  ||du||_inf/dt = 0.303801
+Re=100  Step 2400  ||du||_inf/dt = 0.288593
+Re=100  Step 2500  ||du||_inf/dt = 0.2747
+Re=100  Step 2600  ||du||_inf/dt = 0.261736
+Re=100  Step 2700  ||du||_inf/dt = 0.249622
+Re=100  Step 2800  ||du||_inf/dt = 0.238496
+Re=100  Step 2900  ||du||_inf/dt = 0.227881
+Re=100  Step 3000  ||du||_inf/dt = 0.21822
+Re=100  Step 3100  ||du||_inf/dt = 0.20897
+Re=100  Step 3200  ||du||_inf/dt = 0.200337
+Re=100  Step 3300  ||du||_inf/dt = 0.192318
+Re=100  Step 3400  ||du||_inf/dt = 0.184547
+Re=100  Step 3500  ||du||_inf/dt = 0.177437
+Re=100  Step 3600  ||du||_inf/dt = 0.170632
+Re=100  Step 3700  ||du||_inf/dt = 0.164218
+Re=100  Step 3800  ||du||_inf/dt = 0.158185
+Re=100  Step 3900  ||du||_inf/dt = 0.152378
+Re=100  Step 4000  ||du||_inf/dt = 0.146968
+Re=100  Step 4100  ||du||_inf/dt = 0.141844
+Re=100  Step 4200  ||du||_inf/dt = 0.136932
+Re=100  Step 4300  ||du||_inf/dt = 0.132296
+Re=100  Step 4400  ||du||_inf/dt = 0.127866
+Re=100  Step 4500  ||du||_inf/dt = 0.12366
+Re=100  Step 4600  ||du||_inf/dt = 0.119676
+Re=100  Step 4700  ||du||_inf/dt = 0.115876
+Re=100  Step 4800  ||du||_inf/dt = 0.112257
+Re=100  Step 4900  ||du||_inf/dt = 0.108821
+Re=100  Step 5000  ||du||_inf/dt = 0.105513
+Re=100  Step 5100  ||du||_inf/dt = 0.102345
+Re=100  Step 5200  ||du||_inf/dt = 0.0993972
+Re=100  Step 5300  ||du||_inf/dt = 0.0964656
+Re=100  Step 5400  ||du||_inf/dt = 0.0937032
+Re=100  Step 5500  ||du||_inf/dt = 0.0910813
+Re=100  Step 5600  ||du||_inf/dt = 0.0885755
+Re=100  Step 5700  ||du||_inf/dt = 0.0861297
+Re=100  Step 5800  ||du||_inf/dt = 0.0838766
+Re=100  Step 5900  ||du||_inf/dt = 0.0816253
+Re=100  Step 6000  ||du||_inf/dt = 0.0794668
+Re=100  Step 6100  ||du||_inf/dt = 0.0773979
+Re=100  Step 6200  ||du||_inf/dt = 0.0754272
+Re=100  Step 6300  ||du||_inf/dt = 0.0735451
+Re=100  Step 6400  ||du||_inf/dt = 0.0716997
+Re=100  Step 6500  ||du||_inf/dt = 0.0699417
+Re=100  Step 6600  ||du||_inf/dt = 0.0682647
+Re=100  Step 6700  ||du||_inf/dt = 0.0665753
+Re=100  Step 6800  ||du||_inf/dt = 0.0649794
+Re=100  Step 6900  ||du||_inf/dt = 0.0634603
+Re=100  Step 7000  ||du||_inf/dt = 0.0619808
+Re=100  Step 7100  ||du||_inf/dt = 0.0605275
+Re=100  Step 7200  ||du||_inf/dt = 0.0591744
+Re=100  Step 7300  ||du||_inf/dt = 0.0577992
+Re=100  Step 7400  ||du||_inf/dt = 0.0564947
+Re=100  Step 7500  ||du||_inf/dt = 0.0552577
+Re=100  Step 7600  ||du||_inf/dt = 0.0540406
+Re=100  Step 7700  ||du||_inf/dt = 0.0528405
+Re=100  Step 7800  ||du||_inf/dt = 0.0516927
+Re=100  Step 7900  ||du||_inf/dt = 0.050568
+Re=100  Step 8000  ||du||_inf/dt = 0.0494704
+Re=100  Step 8100  ||du||_inf/dt = 0.0484101
+Re=100  Step 8200  ||du||_inf/dt = 0.0474206
+Re=100  Step 8300  ||du||_inf/dt = 0.0464255
+Re=100  Step 8400  ||du||_inf/dt = 0.0454383
+Re=100  Step 8500  ||du||_inf/dt = 0.0445109
+Re=100  Step 8600  ||du||_inf/dt = 0.0435802
+Re=100  Step 8700  ||du||_inf/dt = 0.0426927
+Re=100  Step 8800  ||du||_inf/dt = 0.0418107
+Re=100  Step 8900  ||du||_inf/dt = 0.0409591
+Re=100  Step 9000  ||du||_inf/dt = 0.0401152
+Re=100  Step 9100  ||du||_inf/dt = 0.0393561
+Re=100  Step 9200  ||du||_inf/dt = 0.0385495
+Re=100  Step 9300  ||du||_inf/dt = 0.0377951
+Re=100  Step 9400  ||du||_inf/dt = 0.0370491
+Re=100  Step 9500  ||du||_inf/dt = 0.036318
+Re=100  Step 9600  ||du||_inf/dt = 0.0356058
+Re=100  Step 9700  ||du||_inf/dt = 0.0349192
+Re=100  Step 9800  ||du||_inf/dt = 0.0342448
+Re=100  Step 9900  ||du||_inf/dt = 0.033574
+Re=100  Step 10000  ||du||_inf/dt = 0.0329212
+Re=100  Step 10100  ||du||_inf/dt = 0.0322965
+Re=100  Step 10200  ||du||_inf/dt = 0.0316821
+Re=100  Step 10300  ||du||_inf/dt = 0.0310749
+Re=100  Step 10400  ||du||_inf/dt = 0.0304834
+Re=100  Step 10500  ||du||_inf/dt = 0.0298999
+Re=100  Step 10600  ||du||_inf/dt = 0.0293546
+Re=100  Step 10700  ||du||_inf/dt = 0.02882
+Re=100  Step 10800  ||du||_inf/dt = 0.0282855
+Re=100  Step 10900  ||du||_inf/dt = 0.027745
+Re=100  Step 11000  ||du||_inf/dt = 0.027258
+Re=100  Step 11100  ||du||_inf/dt = 0.0267263
+Re=100  Step 11200  ||du||_inf/dt = 0.0262629
+Re=100  Step 11300  ||du||_inf/dt = 0.0257644
+Re=100  Step 11400  ||du||_inf/dt = 0.0252919
+Re=100  Step 11500  ||du||_inf/dt = 0.0248347
+Re=100  Step 11600  ||du||_inf/dt = 0.0243701
+Re=100  Step 11700  ||du||_inf/dt = 0.0239444
+Re=100  Step 11800  ||du||_inf/dt = 0.0235159
+Re=100  Step 11900  ||du||_inf/dt = 0.0230922
+Re=100  Step 12000  ||du||_inf/dt = 0.0226625
+Re=100  Step 12100  ||du||_inf/dt = 0.0222578
+Re=100  Step 12200  ||du||_inf/dt = 0.0218701
+Re=100  Step 12300  ||du||_inf/dt = 0.0214819
+Re=100  Step 12400  ||du||_inf/dt = 0.0210902
+Re=100  Step 12500  ||du||_inf/dt = 0.0207037
+Re=100  Step 12600  ||du||_inf/dt = 0.0203653
+Re=100  Step 12700  ||du||_inf/dt = 0.0200165
+Re=100  Step 12800  ||du||_inf/dt = 0.0196415
+Re=100  Step 12900  ||du||_inf/dt = 0.0192996
+Re=100  Step 13000  ||du||_inf/dt = 0.0189523
+Re=100  Step 13100  ||du||_inf/dt = 0.0186243
+Re=100  Step 13200  ||du||_inf/dt = 0.0183144
+Re=100  Step 13300  ||du||_inf/dt = 0.0179868
+Re=100  Step 13400  ||du||_inf/dt = 0.0176951
+Re=100  Step 13500  ||du||_inf/dt = 0.0173775
+Re=100  Step 13600  ||du||_inf/dt = 0.0170699
+Re=100  Step 13700  ||du||_inf/dt = 0.0168038
+Re=100  Step 13800  ||du||_inf/dt = 0.0164889
+Re=100  Step 13900  ||du||_inf/dt = 0.0162018
+Re=100  Step 14000  ||du||_inf/dt = 0.0159443
+Re=100  Step 14100  ||du||_inf/dt = 0.0156578
+Re=100  Step 14200  ||du||_inf/dt = 0.0153892
+Re=100  Step 14300  ||du||_inf/dt = 0.0151284
+Re=100  Step 14400  ||du||_inf/dt = 0.0148568
+Re=100  Step 14500  ||du||_inf/dt = 0.0146197
+Re=100  Step 14600  ||du||_inf/dt = 0.0143587
+Re=100  Step 14700  ||du||_inf/dt = 0.0140984
+Re=100  Step 14800  ||du||_inf/dt = 0.0138856
+Re=100  Step 14900  ||du||_inf/dt = 0.0136577
+Re=100  Step 15000  ||du||_inf/dt = 0.0134349
+Re=100  Step 15100  ||du||_inf/dt = 0.0131739
+Re=100  Step 15200  ||du||_inf/dt = 0.0129764
+Re=100  Step 15300  ||du||_inf/dt = 0.0127625
+Re=100  Step 15400  ||du||_inf/dt = 0.0125451
+Re=100  Step 15500  ||du||_inf/dt = 0.0123259
+Re=100  Step 15600  ||du||_inf/dt = 0.012136
+Re=100  Step 15700  ||du||_inf/dt = 0.0119254
+Re=100  Step 15800  ||du||_inf/dt = 0.0117122
+Re=100  Step 15900  ||du||_inf/dt = 0.0115192
+Re=100  Step 16000  ||du||_inf/dt = 0.0113273
+Re=100  Step 16100  ||du||_inf/dt = 0.011151
+Re=100  Step 16200  ||du||_inf/dt = 0.0109593
+Re=100  Step 16300  ||du||_inf/dt = 0.0107849
+Re=100  Step 16400  ||du||_inf/dt = 0.0106022
+Re=100  Step 16500  ||du||_inf/dt = 0.0104259
+Re=100  Step 16600  ||du||_inf/dt = 0.010248
+Re=100  Step 16700  ||du||_inf/dt = 0.0100762
+Re=100  Step 16800  ||du||_inf/dt = 0.00990979
+Re=100  Step 16900  ||du||_inf/dt = 0.00974093
+Re=100  Step 17000  ||du||_inf/dt = 0.00959168
+Re=100  Step 17100  ||du||_inf/dt = 0.00942293
+Re=100  Step 17200  ||du||_inf/dt = 0.00928299
+Re=100  Step 17300  ||du||_inf/dt = 0.00911986
+Re=100  Step 17400  ||du||_inf/dt = 0.00896894
+Re=100  Step 17500  ||du||_inf/dt = 0.00882424
+Re=100  Step 17600  ||du||_inf/dt = 0.00867424
+Re=100  Step 17700  ||du||_inf/dt = 0.00854613
+Re=100  Step 17800  ||du||_inf/dt = 0.00839088
+Re=100  Step 17900  ||du||_inf/dt = 0.00825703
+Re=100  Step 18000  ||du||_inf/dt = 0.00813897
+Re=100  Step 18100  ||du||_inf/dt = 0.00799014
+Re=100  Step 18200  ||du||_inf/dt = 0.00785778
+Re=100  Step 18300  ||du||_inf/dt = 0.00773559
+Re=100  Step 18400  ||du||_inf/dt = 0.00760657
+Re=100  Step 18500  ||du||_inf/dt = 0.00747251
+Re=100  Step 18600  ||du||_inf/dt = 0.0073743
+Re=100  Step 18700  ||du||_inf/dt = 0.00722807
+Re=100  Step 18800  ||du||_inf/dt = 0.00711991
+Re=100  Step 18900  ||du||_inf/dt = 0.0070054
+Re=100  Step 19000  ||du||_inf/dt = 0.0069121
+Re=100  Step 19100  ||du||_inf/dt = 0.00678826
+Re=100  Step 19200  ||du||_inf/dt = 0.00666846
+Re=100  Step 19300  ||du||_inf/dt = 0.00657475
+Re=100  Step 19400  ||du||_inf/dt = 0.00642546
+Re=100  Step 19500  ||du||_inf/dt = 0.00634871
+Re=100  Step 19600  ||du||_inf/dt = 0.0062328
+Re=100  Step 19700  ||du||_inf/dt = 0.0061305
+Re=100  Step 19800  ||du||_inf/dt = 0.00604206
+Re=100  Step 19900  ||du||_inf/dt = 0.00593451
+Re=100  Step 20000  ||du||_inf/dt = 0.00586115
+Re=100  Step 20100  ||du||_inf/dt = 0.00574658
+Re=100  Step 20200  ||du||_inf/dt = 0.00565135
+Re=100  Step 20300  ||du||_inf/dt = 0.00556866
+Re=100  Step 20400  ||du||_inf/dt = 0.00550831
+Re=100  Step 20500  ||du||_inf/dt = 0.00537068
+Re=100  Step 20600  ||du||_inf/dt = 0.00530081
+Re=100  Step 20700  ||du||_inf/dt = 0.00519872
+Re=100  Step 20800  ||du||_inf/dt = 0.00512562
+Re=100  Step 20900  ||du||_inf/dt = 0.0050577
+Re=100  Step 21000  ||du||_inf/dt = 0.0049561
+Re=100  Step 21100  ||du||_inf/dt = 0.00487627
+Re=100  Step 21200  ||du||_inf/dt = 0.00486299
+Re=100  Step 21300  ||du||_inf/dt = 0.0047243
+Re=100  Step 21400  ||du||_inf/dt = 0.00463412
+Re=100  Step 21500  ||du||_inf/dt = 0.00458609
+Re=100  Step 21600  ||du||_inf/dt = 0.00447969
+Re=100  Step 21700  ||du||_inf/dt = 0.0044305
+Re=100  Step 21800  ||du||_inf/dt = 0.00441185
+Re=100  Step 21900  ||du||_inf/dt = 0.00428003
+Re=100  Step 22000  ||du||_inf/dt = 0.00419821
+Re=100  Step 22100  ||du||_inf/dt = 0.00414811
+Re=100  Step 22200  ||du||_inf/dt = 0.00408383
+Re=100  Step 22300  ||du||_inf/dt = 0.00401012
+Re=100  Step 22400  ||du||_inf/dt = 0.00395051
+Re=100  Step 22500  ||du||_inf/dt = 0.00393426
+Re=100  Step 22600  ||du||_inf/dt = 0.00382188
+Re=100  Step 22700  ||du||_inf/dt = 0.00376592
+Re=100  Step 22800  ||du||_inf/dt = 0.00370763
+Re=100  Step 22900  ||du||_inf/dt = 0.00363113
+Re=100  Step 23000  ||du||_inf/dt = 0.00357948
+Re=100  Step 23100  ||du||_inf/dt = 0.00352069
+Re=100  Step 23200  ||du||_inf/dt = 0.0034669
+Re=100  Step 23300  ||du||_inf/dt = 0.00342078
+Re=100  Step 23400  ||du||_inf/dt = 0.00334566
+Re=100  Step 23500  ||du||_inf/dt = 0.00329491
+Re=100  Step 23600  ||du||_inf/dt = 0.0032573
+Re=100  Step 23700  ||du||_inf/dt = 0.00319819
+Re=100  Step 23800  ||du||_inf/dt = 0.00314748
+Re=100  Step 23900  ||du||_inf/dt = 0.00309479
+Re=100  Step 24000  ||du||_inf/dt = 0.00306555
+Re=100  Step 24100  ||du||_inf/dt = 0.00299483
+Re=100  Step 24200  ||du||_inf/dt = 0.00294842
+Re=100  Step 24300  ||du||_inf/dt = 0.00289283
+Re=100  Step 24400  ||du||_inf/dt = 0.00284842
+Re=100  Step 24500  ||du||_inf/dt = 0.00283886
+Re=100  Step 24600  ||du||_inf/dt = 0.00276148
+Re=100  Step 24700  ||du||_inf/dt = 0.00270848
+Re=100  Step 24800  ||du||_inf/dt = 0.00266353
+Re=100  Step 24900  ||du||_inf/dt = 0.00263214
+Re=100  Step 25000  ||du||_inf/dt = 0.00258429
+Re=100  Step 25100  ||du||_inf/dt = 0.00253469
+Re=100  Step 25200  ||du||_inf/dt = 0.00248983
+Re=100  Step 25300  ||du||_inf/dt = 0.0024562
+Re=100  Step 25400  ||du||_inf/dt = 0.0024148
+Re=100  Step 25500  ||du||_inf/dt = 0.00238108
+Re=100  Step 25600  ||du||_inf/dt = 0.00234188
+Re=100  Step 25700  ||du||_inf/dt = 0.00231075
+Re=100  Step 25800  ||du||_inf/dt = 0.00226809
+Re=100  Step 25900  ||du||_inf/dt = 0.00224668
+Re=100  Step 26000  ||du||_inf/dt = 0.00219894
+Re=100  Step 26100  ||du||_inf/dt = 0.00216056
+Re=100  Step 26200  ||du||_inf/dt = 0.00212469
+Re=100  Step 26300  ||du||_inf/dt = 0.00209091
+Re=100  Step 26400  ||du||_inf/dt = 0.00206016
+Re=100  Step 26500  ||du||_inf/dt = 0.00202255
+Re=100  Step 26600  ||du||_inf/dt = 0.00202088
+Re=100  Step 26700  ||du||_inf/dt = 0.00196003
+Re=100  Step 26800  ||du||_inf/dt = 0.0019252
+Re=100  Step 26900  ||du||_inf/dt = 0.00190387
+Re=100  Step 27000  ||du||_inf/dt = 0.00186168
+Re=100  Step 27100  ||du||_inf/dt = 0.00183528
+Re=100  Step 27200  ||du||_inf/dt = 0.00180904
+Re=100  Step 27300  ||du||_inf/dt = 0.00176232
+Re=100  Step 27400  ||du||_inf/dt = 0.00174324
+Re=100  Step 27500  ||du||_inf/dt = 0.00171602
+Re=100  Step 27600  ||du||_inf/dt = 0.00169019
+Re=100  Step 27700  ||du||_inf/dt = 0.00166839
+Re=100  Step 27800  ||du||_inf/dt = 0.00163271
+Re=100  Step 27900  ||du||_inf/dt = 0.00161377
+Re=100  Step 28000  ||du||_inf/dt = 0.0015785
+Re=100  Step 28100  ||du||_inf/dt = 0.00155942
+Re=100  Step 28200  ||du||_inf/dt = 0.00153457
+Re=100  Step 28300  ||du||_inf/dt = 0.001513
+Re=100  Step 28400  ||du||_inf/dt = 0.00151356
+Re=100  Step 28500  ||du||_inf/dt = 0.00145549
+Re=100  Step 28600  ||du||_inf/dt = 0.00143541
+Re=100  Step 28700  ||du||_inf/dt = 0.00141721
+Re=100  Step 28800  ||du||_inf/dt = 0.00138966
+Re=100  Step 28900  ||du||_inf/dt = 0.00136957
+Re=100  Step 29000  ||du||_inf/dt = 0.00134819
+Re=100  Step 29100  ||du||_inf/dt = 0.00132717
+Re=100  Step 29200  ||du||_inf/dt = 0.00130037
+Re=100  Step 29300  ||du||_inf/dt = 0.00128889
+Re=100  Step 29400  ||du||_inf/dt = 0.0012637
+Re=100  Step 29500  ||du||_inf/dt = 0.0012692
+Re=100  Step 29600  ||du||_inf/dt = 0.00122618
+Re=100  Step 29700  ||du||_inf/dt = 0.00120155
+Re=100  Step 29800  ||du||_inf/dt = 0.00118863
+Re=100  Step 29900  ||du||_inf/dt = 0.00116686
+Re=100  Step 30000  ||du||_inf/dt = 0.00114656
+Re=100  Step 30100  ||du||_inf/dt = 0.00112938
+Re=100  Step 30200  ||du||_inf/dt = 0.00111191
+Re=100  Step 30300  ||du||_inf/dt = 0.00109294
+Re=100  Step 30400  ||du||_inf/dt = 0.00108056
+Re=100  Step 30500  ||du||_inf/dt = 0.00105165
+Re=100  Step 30600  ||du||_inf/dt = 0.00104009
+Re=100  Step 30700  ||du||_inf/dt = 0.00103374
+Re=100  Step 30800  ||du||_inf/dt = 0.00100775
+Re=100  Step 30900  ||du||_inf/dt = 0.0010167
+Re=100  Step 31000  ||du||_inf/dt = 0.000974616
+Re=100  Step 31100  ||du||_inf/dt = 0.000975402
+Re=100  Step 31200  ||du||_inf/dt = 0.000943779
+Re=100  Step 31300  ||du||_inf/dt = 0.000923098
+Re=100  Step 31400  ||du||_inf/dt = 0.000912337
+Re=100  Step 31500  ||du||_inf/dt = 0.000893451
+Re=100  Step 31600  ||du||_inf/dt = 0.000904944
+Re=100  Step 31700  ||du||_inf/dt = 0.0008615
+Re=100  Step 31800  ||du||_inf/dt = 0.0008515
+Re=100  Step 31900  ||du||_inf/dt = 0.00084664
+Re=100  Step 32000  ||du||_inf/dt = 0.00084117
+Re=100  Step 32100  ||du||_inf/dt = 0.000806135
+Re=100  Step 32200  ||du||_inf/dt = 0.000793053
+Re=100  Step 32300  ||du||_inf/dt = 0.000796732
+Re=100  Step 32400  ||du||_inf/dt = 0.000774479
+Re=100  Step 32500  ||du||_inf/dt = 0.000763527
+Re=100  Step 32600  ||du||_inf/dt = 0.000753627
+Re=100  Step 32700  ||du||_inf/dt = 0.000752315
+Re=100  Step 32800  ||du||_inf/dt = 0.000724588
+Re=100  Step 32900  ||du||_inf/dt = 0.000717646
+Re=100  Step 33000  ||du||_inf/dt = 0.000723472
+Re=100  Step 33100  ||du||_inf/dt = 0.000696398
+Re=100  Step 33200  ||du||_inf/dt = 0.000723045
+Re=100  Step 33300  ||du||_inf/dt = 0.00067284
+Re=100  Step 33400  ||du||_inf/dt = 0.000649474
+Re=100  Step 33500  ||du||_inf/dt = 0.000648566
+Re=100  Step 33600  ||du||_inf/dt = 0.000637728
+Re=100  Step 33700  ||du||_inf/dt = 0.000623753
+Re=100  Step 33800  ||du||_inf/dt = 0.00062456
+Re=100  Step 33900  ||du||_inf/dt = 0.00060628
+Re=100  Step 34000  ||du||_inf/dt = 0.000602796
+Re=100  Step 34100  ||du||_inf/dt = 0.000583567
+Re=100  Step 34200  ||du||_inf/dt = 0.000580329
+Re=100  Step 34300  ||du||_inf/dt = 0.000572546
+Re=100  Step 34400  ||du||_inf/dt = 0.000556153
+Re=100  Step 34500  ||du||_inf/dt = 0.000561848
+Re=100  Step 34600  ||du||_inf/dt = 0.000529256
+Re=100  Step 34700  ||du||_inf/dt = 0.00053135
+Re=100  Step 34800  ||du||_inf/dt = 0.00054268
+Re=100  Step 34900  ||du||_inf/dt = 0.000518659
+Re=100  Step 35000  ||du||_inf/dt = 0.000502271
+Re=100  Step 35100  ||du||_inf/dt = 0.000507595
+Re=100  Step 35200  ||du||_inf/dt = 0.000510972
+Re=100  Step 35300  ||du||_inf/dt = 0.000485014
+Re=100  Step 35400  ||du||_inf/dt = 0.000479589
+Re=100  Step 35500  ||du||_inf/dt = 0.000477138
+Re=100  Step 35600  ||du||_inf/dt = 0.000456246
+Re=100  Step 35700  ||du||_inf/dt = 0.000457302
+Re=100  Step 35800  ||du||_inf/dt = 0.000447419
+Re=100  Step 35900  ||du||_inf/dt = 0.000443856
+Re=100  Step 36000  ||du||_inf/dt = 0.000458365
+Re=100  Step 36100  ||du||_inf/dt = 0.000421708
+Re=100  Step 36200  ||du||_inf/dt = 0.000428686
+Re=100  Step 36300  ||du||_inf/dt = 0.000415017
+Re=100  Step 36400  ||du||_inf/dt = 0.000415338
+Re=100  Step 36500  ||du||_inf/dt = 0.000408281
+Re=100  Step 36600  ||du||_inf/dt = 0.000396262
+Re=100  Step 36700  ||du||_inf/dt = 0.000389334
+Re=100  Step 36800  ||du||_inf/dt = 0.000379798
+Re=100  Step 36900  ||du||_inf/dt = 0.000376411
+Re=100  Step 37000  ||du||_inf/dt = 0.000363881
+Re=100  Step 37100  ||du||_inf/dt = 0.000361919
+Re=100  Step 37200  ||du||_inf/dt = 0.00036024
+Re=100  Step 37300  ||du||_inf/dt = 0.000343569
+Re=100  Step 37400  ||du||_inf/dt = 0.000381952
+Re=100  Step 37500  ||du||_inf/dt = 0.0003356
+Re=100  Step 37600  ||du||_inf/dt = 0.000326547
+Re=100  Step 37700  ||du||_inf/dt = 0.000330814
+Re=100  Step 37800  ||du||_inf/dt = 0.000329318
+Re=100  Step 37900  ||du||_inf/dt = 0.000316169
+Re=100  Step 38000  ||du||_inf/dt = 0.000312065
+Re=100  Step 38100  ||du||_inf/dt = 0.000327139
+Re=100  Step 38200  ||du||_inf/dt = 0.00030544
+Re=100  Step 38300  ||du||_inf/dt = 0.000306706
+Re=100  Step 38400  ||du||_inf/dt = 0.000293228
+Re=100  Step 38500  ||du||_inf/dt = 0.00028726
+Re=100  Step 38600  ||du||_inf/dt = 0.000287676
+Re=100  Step 38700  ||du||_inf/dt = 0.000279418
+Re=100  Step 38800  ||du||_inf/dt = 0.000272831
+Re=100  Step 38900  ||du||_inf/dt = 0.000272069
+Re=100  Step 39000  ||du||_inf/dt = 0.000265827
+Re=100  Step 39100  ||du||_inf/dt = 0.000269688
+Re=100  Step 39200  ||du||_inf/dt = 0.000256186
+Re=100  Step 39300  ||du||_inf/dt = 0.000248174
+Re=100  Step 39400  ||du||_inf/dt = 0.000239249
+Re=100  Step 39500  ||du||_inf/dt = 0.000251721
+Re=100  Step 39600  ||du||_inf/dt = 0.000243204
+Re=100  Step 39700  ||du||_inf/dt = 0.00024141
+Re=100  Step 39800  ||du||_inf/dt = 0.000245553
+Re=100  Step 39900  ||du||_inf/dt = 0.000229844
+Re=100  Step 40000  ||du||_inf/dt = 0.000228871
+Re=100  Step 40100  ||du||_inf/dt = 0.000239293
+Re=100  Step 40200  ||du||_inf/dt = 0.000216922
+Re=100  Step 40300  ||du||_inf/dt = 0.000220249
+Re=100  Step 40400  ||du||_inf/dt = 0.000212986
+Re=100  Step 40500  ||du||_inf/dt = 0.000206502
+Re=100  Step 40600  ||du||_inf/dt = 0.000202671
+Re=100  Step 40700  ||du||_inf/dt = 0.000201713
+Re=100  Step 40800  ||du||_inf/dt = 0.000206767
+Re=100  Step 40900  ||du||_inf/dt = 0.00020065
+Re=100  Step 41000  ||du||_inf/dt = 0.000265633
+Re=100  Step 41100  ||du||_inf/dt = 0.000190923
+Re=100  Step 41200  ||du||_inf/dt = 0.000188668
+Re=100  Step 41300  ||du||_inf/dt = 0.000186917
+Re=100  Step 41400  ||du||_inf/dt = 0.00019333
+Re=100  Step 41500  ||du||_inf/dt = 0.000179914
+Re=100  Step 41600  ||du||_inf/dt = 0.000183215
+Re=100  Step 41700  ||du||_inf/dt = 0.000169796
+Re=100  Step 41800  ||du||_inf/dt = 0.000166813
+Re=100  Step 41900  ||du||_inf/dt = 0.000169108
+Re=100  Step 42000  ||du||_inf/dt = 0.000169315
+Re=100  Step 42100  ||du||_inf/dt = 0.00017973
+Re=100  Step 42200  ||du||_inf/dt = 0.000156122
+Re=100  Step 42300  ||du||_inf/dt = 0.000165769
+Re=100  Step 42400  ||du||_inf/dt = 0.000172268
+Re=100  Step 42500  ||du||_inf/dt = 0.000148165
+Re=100  Step 42600  ||du||_inf/dt = 0.000155127
+Re=100  Step 42700  ||du||_inf/dt = 0.000143063
+Re=100  Step 42800  ||du||_inf/dt = 0.000146383
+Re=100  Step 42900  ||du||_inf/dt = 0.000144153
+Re=100  Step 43000  ||du||_inf/dt = 0.000149656
+Re=100  Step 43100  ||du||_inf/dt = 0.000145384
+Re=100  Step 43200  ||du||_inf/dt = 0.00013509
+Re=100  Step 43300  ||du||_inf/dt = 0.000154541
+Re=100  Step 43400  ||du||_inf/dt = 0.000135471
+Re=100  Step 43500  ||du||_inf/dt = 0.000167807
+Re=100  Step 43600  ||du||_inf/dt = 0.000137119
+Re=100  Step 43700  ||du||_inf/dt = 0.000127821
+Re=100  Step 43800  ||du||_inf/dt = 0.000122889
+Re=100  Step 43900  ||du||_inf/dt = 0.000119428
+Re=100  Step 44000  ||du||_inf/dt = 0.00011789
+Re=100  Step 44100  ||du||_inf/dt = 0.000119778
+Re=100  Step 44200  ||du||_inf/dt = 0.000109048
+Re=100  Step 44300  ||du||_inf/dt = 0.000111322
+Re=100  Step 44400  ||du||_inf/dt = 0.000126805
+Re=100  Step 44500  ||du||_inf/dt = 0.000107816
+Re=100  Step 44600  ||du||_inf/dt = 0.000111434
+Re=100  Step 44700  ||du||_inf/dt = 0.000116424
+Re=100  Step 44800  ||du||_inf/dt = 0.000110349
+Re=100  Step 44900  ||du||_inf/dt = 0.000111792
+Re=100  Step 45000  ||du||_inf/dt = 0.000109612
+Re=100  Step 45100  ||du||_inf/dt = 0.000101562
+Re=100  Step 45200  ||du||_inf/dt = 0.000100213
+Re=100  Step 45300  ||du||_inf/dt = 0.000115558
+Re=100  Step 45400  ||du||_inf/dt = 9.70885e-05
+Re=100  Step 45500  ||du||_inf/dt = 9.57072e-05
+Re=100  Step 45600  ||du||_inf/dt = 0.000120348
+Re=100  Step 45700  ||du||_inf/dt = 8.8179e-05
+Re=100  Step 45800  ||du||_inf/dt = 0.000103837
+Re=100  Step 45900  ||du||_inf/dt = 9.93271e-05
+Re=100  Step 46000  ||du||_inf/dt = 0.000134197
+Re=100  Step 46100  ||du||_inf/dt = 8.93904e-05
+Re=100  Step 46200  ||du||_inf/dt = 8.57492e-05
+Re=100  Step 46300  ||du||_inf/dt = 0.000101087
+Re=100  Step 46400  ||du||_inf/dt = 8.12103e-05
+Re=100  Step 46500  ||du||_inf/dt = 0.000103051
+Re=100  Step 46600  ||du||_inf/dt = 8.04469e-05
+Re=100  Step 46700  ||du||_inf/dt = 0.000138967
+Re=100  Step 46800  ||du||_inf/dt = 9.12791e-05
+Re=100  Step 46900  ||du||_inf/dt = 8.86477e-05
+Re=100  Step 47000  ||du||_inf/dt = 0.000135361
+Re=100  Step 47100  ||du||_inf/dt = 7.16134e-05
+Re=100  Step 47200  ||du||_inf/dt = 7.93164e-05
+Re=100  Step 47300  ||du||_inf/dt = 6.55638e-05
+Re=100  Step 47400  ||du||_inf/dt = 6.79813e-05
+Re=100  Step 47500  ||du||_inf/dt = 7.17847e-05
+Re=100  Step 47600  ||du||_inf/dt = 6.78649e-05
+Re=100  Step 47700  ||du||_inf/dt = 6.50907e-05
+Re=100  Step 47800  ||du||_inf/dt = 8.04837e-05
+Re=100  Step 47900  ||du||_inf/dt = 0.000122566
+Re=100  Step 48000  ||du||_inf/dt = 6.88904e-05
+Re=100  Step 48100  ||du||_inf/dt = 8.2182e-05
+Re=100  Step 48200  ||du||_inf/dt = 5.9514e-05
+Re=100  Step 48300  ||du||_inf/dt = 6.14171e-05
+Re=100  Step 48400  ||du||_inf/dt = 6.02545e-05
+Re=100  Step 48500  ||du||_inf/dt = 0.000138605
+Re=100  Step 48600  ||du||_inf/dt = 5.44956e-05
+Re=100  Step 48700  ||du||_inf/dt = 5.99967e-05
+Re=100  Step 48800  ||du||_inf/dt = 6.09865e-05
+Re=100  Step 48900  ||du||_inf/dt = 5.34289e-05
+Re=100  Step 49000  ||du||_inf/dt = 5.88882e-05
+Re=100  Step 49100  ||du||_inf/dt = 6.12817e-05
+Re=100  Step 49200  ||du||_inf/dt = 5.606e-05
+Re=100  Step 49300  ||du||_inf/dt = 6.52982e-05
+Re=100  Step 49400  ||du||_inf/dt = 5.37899e-05
+Re=100  Step 49500  ||du||_inf/dt = 4.72352e-05
+Re=100  Step 49600  ||du||_inf/dt = 5.89493e-05
+Re=100  Step 49700  ||du||_inf/dt = 4.81537e-05
+Re=100  Step 49800  ||du||_inf/dt = 5.19569e-05
+Re=100  Step 49900  ||du||_inf/dt = 6.25016e-05
+Re=100  Step 50000  ||du||_inf/dt = 4.97347e-05
+Re=100  Step 50100  ||du||_inf/dt = 0.000218218
+Re=100  Step 50200  ||du||_inf/dt = 4.97412e-05
+Re=100  Step 50300  ||du||_inf/dt = 5.65005e-05
+Re=100  Step 50400  ||du||_inf/dt = 6.15686e-05
+Re=100  Step 50500  ||du||_inf/dt = 4.76645e-05
+Re=100  Step 50600  ||du||_inf/dt = 5.92332e-05
+Re=100  Step 50700  ||du||_inf/dt = 4.05739e-05
+Re=100  Step 50800  ||du||_inf/dt = 5.79861e-05
+Re=100  Step 50900  ||du||_inf/dt = 3.81066e-05
+Re=100  Step 51000  ||du||_inf/dt = 4.8614e-05
+Re=100  Step 51100  ||du||_inf/dt = 6.31713e-05
+Re=100  Step 51200  ||du||_inf/dt = 4.50178e-05
+Re=100  Step 51300  ||du||_inf/dt = 4.75511e-05
+Re=100  Step 51400  ||du||_inf/dt = 3.84841e-05
+Re=100  Step 51500  ||du||_inf/dt = 0.000121045
+Re=100  Step 51600  ||du||_inf/dt = 7.81992e-05
+Re=100  Step 51700  ||du||_inf/dt = 5.7634e-05
+Re=100  Step 51800  ||du||_inf/dt = 3.54248e-05
+Re=100  Step 51900  ||du||_inf/dt = 6.08769e-05
+Re=100  Step 52000  ||du||_inf/dt = 3.49159e-05
+Re=100  Step 52100  ||du||_inf/dt = 8.07545e-05
+Re=100  Step 52200  ||du||_inf/dt = 6.12086e-05
+Re=100  Step 52300  ||du||_inf/dt = 8.54533e-05
+Re=100  Step 52400  ||du||_inf/dt = 4.2735e-05
+Re=100  Step 52500  ||du||_inf/dt = 3.5812e-05
+Re=100  Step 52600  ||du||_inf/dt = 4.43588e-05
+Re=100  Step 52700  ||du||_inf/dt = 3.72989e-05
+Re=100  Step 52800  ||du||_inf/dt = 5.40495e-05
+Re=100  Step 52900  ||du||_inf/dt = 2.86156e-05
+Re=100  Step 53000  ||du||_inf/dt = 2.71974e-05
+Re=100  Step 53100  ||du||_inf/dt = 3.80096e-05
+Re=100  Step 53200  ||du||_inf/dt = 4.12816e-05
+Re=100  Step 53300  ||du||_inf/dt = 3.65716e-05
+Re=100  Step 53400  ||du||_inf/dt = 2.63125e-05
+Re=100  Step 53500  ||du||_inf/dt = 2.72573e-05
+Re=100  Step 53600  ||du||_inf/dt = 2.70134e-05
+Re=100  Step 53700  ||du||_inf/dt = 4.1144e-05
+Re=100  Step 53800  ||du||_inf/dt = 5.78112e-05
+Re=100  Step 53900  ||du||_inf/dt = 2.32663e-05
+Re=100  Step 54000  ||du||_inf/dt = 3.54922e-05
+Re=100  Step 54100  ||du||_inf/dt = 2.31455e-05
+Re=100  Step 54200  ||du||_inf/dt = 4.2207e-05
+Re=100  Step 54300  ||du||_inf/dt = 4.85068e-05
+Re=100  Step 54400  ||du||_inf/dt = 2.49742e-05
+Re=100  Step 54500  ||du||_inf/dt = 6.29991e-05
+Re=100  Step 54600  ||du||_inf/dt = 3.49129e-05
+Re=100  Step 54700  ||du||_inf/dt = 3.58664e-05
+Re=100  Step 54800  ||du||_inf/dt = 3.03143e-05
+Re=100  Step 54900  ||du||_inf/dt = 2.2247e-05
+Re=100  Step 55000  ||du||_inf/dt = 2.57265e-05
+Re=100  Step 55100  ||du||_inf/dt = 4.67189e-05
+Re=100  Step 55200  ||du||_inf/dt = 2.78777e-05
+Re=100  Step 55300  ||du||_inf/dt = 6.36035e-05
+Re=100  Step 55400  ||du||_inf/dt = 4.67546e-05
+Re=100  Step 55500  ||du||_inf/dt = 2.99275e-05
+Re=100  Step 55600  ||du||_inf/dt = 1.93014e-05
+Re=100  Step 55700  ||du||_inf/dt = 1.75243e-05
+Re=100  Step 55800  ||du||_inf/dt = 1.89549e-05
+Re=100  Step 55900  ||du||_inf/dt = 1.67633e-05
+Re=100  Step 56000  ||du||_inf/dt = 1.7238e-05
+Re=100  Step 56100  ||du||_inf/dt = 1.67615e-05
+Re=100  Step 56200  ||du||_inf/dt = 1.61467e-05
+Re=100  Step 56300  ||du||_inf/dt = 1.59362e-05
+Re=100  Step 56400  ||du||_inf/dt = 1.55355e-05
+Re=100  Step 56500  ||du||_inf/dt = 1.53444e-05
+Re=100  Step 56600  ||du||_inf/dt = 1.51979e-05
+Re=100  Step 56700  ||du||_inf/dt = 1.48707e-05
+Re=100  Step 56800  ||du||_inf/dt = 1.46208e-05
+Re=100  Step 56900  ||du||_inf/dt = 1.83985e-05
+Re=100  Step 57000  ||du||_inf/dt = 1.43962e-05
+Re=100  Step 57100  ||du||_inf/dt = 1.42258e-05
+Re=100  Step 57200  ||du||_inf/dt = 1.87616e-05
+Re=100  Step 57300  ||du||_inf/dt = 1.38397e-05
+Re=100  Step 57400  ||du||_inf/dt = 1.77473e-05
+Re=100  Step 57500  ||du||_inf/dt = 1.40674e-05
+Re=100  Step 57600  ||du||_inf/dt = 1.28542e-05
+Re=100  Step 57700  ||du||_inf/dt = 1.79367e-05
+Re=100  Step 57800  ||du||_inf/dt = 1.23818e-05
+Re=100  Step 57900  ||du||_inf/dt = 1.61504e-05
+Re=100  Step 58000  ||du||_inf/dt = 1.20423e-05
+Re=100  Step 58100  ||du||_inf/dt = 1.1985e-05
+Re=100  Step 58200  ||du||_inf/dt = 1.48937e-05
+Re=100  Step 58300  ||du||_inf/dt = 1.16829e-05
+Re=100  Step 58400  ||du||_inf/dt = 1.15435e-05
+Re=100  Step 58500  ||du||_inf/dt = 1.46335e-05
+Re=100  Step 58600  ||du||_inf/dt = 1.10472e-05
+Re=100  Step 58700  ||du||_inf/dt = 1.08755e-05
+Re=100  Step 58800  ||du||_inf/dt = 1.68833e-05
+Re=100  Step 58900  ||du||_inf/dt = 1.04516e-05
+Re=100  Step 59000  ||du||_inf/dt = 1.02365e-05
+Re=100  Step 59100  ||du||_inf/dt = 1.00335e-05
+Re=100  Step 59200  ||du||_inf/dt = 9.8602e-06
+Steady state reached at step 59200 for Re=100
+Field 'pressure' exported to: output/lid_driven_cavity/Re_100/fields/pressure.vtk
+Field 'u_velocity' exported to: output/lid_driven_cavity/Re_100/fields/u_velocity.vtk
+Field 'v_velocity' exported to: output/lid_driven_cavity/Re_100/fields/v_velocity.vtk
+Validation: u(y) centreline -> output/lid_driven_cavity/Re_100/data/centerline_u.csv
+Validation: v(x) centreline -> output/lid_driven_cavity/Re_100/data/centerline_v.csv
+
+--- Ghia et al. Re=100 reference (u along y/H) ---
+y/H      u/U_lid
+1   1
+0.9766   0.84123
+0.9688   0.78871
+0.9609   0.73722
+0.9531   0.68717
+0.8516   0.23151
+0.7344   0.00332
+0.6172   -0.13641
+0.5   -0.20581
+0.4531   -0.2109
+0.2813   -0.15662
+0.1719   -0.1015
+0.1016   -0.06434
+0.0703   -0.04775
+0.0625   -0.04192
+0.0547   -0.03717
+0   0
+
+--- Ghia et al. Re=100 reference (v along x/L) ---
+x/L      v/U_lid
+1   0
+0.9688   -0.05906
+0.9609   -0.07391
+0.9531   -0.08864
+0.9453   -0.10313
+0.9063   -0.16914
+0.8594   -0.22445
+0.8047   -0.24533
+0.5   0.05454
+0.2344   0.17527
+0.2266   0.17507
+0.1563   0.16077
+0.0938   0.12317
+0.0781   0.1089
+0.0703   0.10091
+0.0625   0.09233
+0   0

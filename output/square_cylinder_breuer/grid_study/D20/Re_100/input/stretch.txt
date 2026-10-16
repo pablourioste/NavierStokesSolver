@@ -1,0 +1,18 @@
+# --- Mesh — Breuer benchmark. Uniform D/16 cells across the obstacle,
+# sinh stretching away from it, tuned so adjacent cells differ by < 7 %
+# everywhere (208 x 80 cells; D/16 at the obstacle, up to 0.9 D at the outlet).
+beta_x_west   = 1.6
+beta_x_center = 0.0
+beta_x_east   = -1.7
+beta_y_south  = 0.9
+beta_y_center = 0.0
+beta_y_north  = -0.9
+
+# X: west (12 D upstream face), center (D), east (37 D downstream)
+N_cells_west    = 65
+N_cells_center  = 20
+N_cells_east    = 175
+# Y: south (3.5 D), center (D), north (3.5 D)
+M_cells_west    = 40
+M_cells_center  = 20
+M_cells_east    = 40

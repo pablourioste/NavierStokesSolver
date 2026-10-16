@@ -1,20 +1,40 @@
+"""
+plot_results.py — Lid-Driven Cavity post-processing and validation.
+
+Reads output/lid_driven_cavity/Re_<N>/ and writes
+
+  per case   Re_<N>/figures/flow_fields.{pdf,png}   (a) stream function,
+                                                     (b) vorticity, (c) pressure
+             Re_<N>/figures/centerlines.{pdf,png}   u(y) at x = L/2, v(x) at y = H/2
+                                                     (+ Ghia et al. when available)
+  summary    figures/centerline_comparison          all Ghia Reynolds numbers overlaid
+             figures/centerline_trend               every computed Re, coloured by Re
+             figures/streamfunction_overview        flow topology across Re
+             validation_summary.csv                 errors vs. Ghia et al. (1982)
+
+Reference: U. Ghia, K. N. Ghia, C. T. Shin, J. Comput. Phys. 48 (1982) 387-411.
+Run from anywhere:  python3 plotters/plot_results.py
+"""
 import os
-import re
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from scipy.interpolate import RegularGridInterpolator
+from matplotlib.colors import BoundaryNorm, LogNorm, Normalize
+from matplotlib.lines import Line2D
+from matplotlib.cm import ScalarMappable
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(BASE_DIR)
-OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
+import nsplot as ns
+
+SCENARIO = "lid_driven_cavity"
+U_LID = 1.0
 
 # =============================================================================
-# Datos de referencia — Ghia et al. (1982), todas las Re
+# Reference data — Ghia, Ghia & Shin (1982)
 # =============================================================================
-# TABLE I: col 0 = y/H, cols 1-7 = u/U para Re 100,400,1000,3200,5000,7500,10000
-ghia_u_table = np.array([
+GHIA_RE = [100, 400, 1000, 3200, 5000, 7500, 10000]
+# Table I: y/H, then u/U for each Re in GHIA_RE
+GHIA_U = np.array([
     [1.0000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000,  1.00000],
     [0.9766,  0.84123,  0.75837,  0.65928,  0.53236,  0.48223,  0.47244,  0.47221],
     [0.9688,  0.78871,  0.68439,  0.57492,  0.48296,  0.46120,  0.47048,  0.47783],
@@ -33,8 +53,8 @@ ghia_u_table = np.array([
     [0.0547, -0.03717, -0.08186, -0.18109, -0.43025, -0.43025, -0.41487, -0.43025],
     [0.0000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000],
 ])
-# TABLE II: col 0 = x/L, cols 1-7 = v/U para Re 100,400,1000,3200,5000,7500,10000
-ghia_v_table = np.array([
+# Table II: x/L, then v/U for each Re in GHIA_RE
+GHIA_V = np.array([
     [1.0000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000],
     [0.9688, -0.05906, -0.12146, -0.21388, -0.39017, -0.49774, -0.53858, -0.54302],
     [0.9609, -0.07391, -0.15663, -0.27669, -0.47425, -0.55069, -0.55216, -0.52987],
@@ -53,200 +73,318 @@ ghia_v_table = np.array([
     [0.0625,  0.09233,  0.18360,  0.27485,  0.39560,  0.42447,  0.43979,  0.43983],
     [0.0000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000,  0.00000],
 ])
-GHIA_RE_LIST = [100, 400, 1000, 3200, 5000, 7500, 10000]
+# Table V: primary vortex — psi_min, x, y
+GHIA_PRIMARY = {
+    100:   (-0.103423, 0.6172, 0.7344),
+    400:   (-0.113909, 0.5547, 0.6055),
+    1000:  (-0.117929, 0.5313, 0.5625),
+    3200:  (-0.120377, 0.5165, 0.5469),
+    5000:  (-0.118966, 0.5117, 0.5352),
+    7500:  (-0.119976, 0.5117, 0.5322),
+    10000: (-0.119731, 0.5117, 0.5333),
+}
+# Stream-function contour levels used in Ghia et al. (1982), Table III
+PSI_LEVELS_PRIMARY = [-0.1175, -0.115, -0.11, -0.1, -0.09, -0.07, -0.05, -0.03,
+                      -0.01, -1e-4, -1e-5, -1e-7, -1e-10]
+PSI_LEVELS_SECONDARY = [1e-8, 1e-7, 1e-6, 1e-5, 5e-5, 1e-4, 2.5e-4, 5e-4,
+                        1e-3, 1.5e-3, 3e-3]
+OMEGA_LEVELS = [-5, -4, -3, -2, -1, -0.5, 0, 0.5, 1, 2, 3, 4, 5]
+
+SECONDARY_COLOUR = "#B2182B"   # counter-rotating (psi > 0) eddies
+
+# Cross-case figures only show runs with at least this many cells per
+# direction: under-resolved grids (e.g. 50x50 at Re >= 1000) would otherwise be
+# plotted next to converged ones. Per-case figures and the summary CSV still
+# list every case together with its grid.
+MIN_CELLS_SUMMARY = 100
 
 
-def ghia_column_for_re(re_value):
-    return min(range(len(GHIA_RE_LIST)), key=lambda i: abs(GHIA_RE_LIST[i] - re_value))
+def ghia(re):
+    """(y, u), (x, v) reference arrays, or None if Re is not tabulated."""
+    if re not in GHIA_RE:
+        return None
+    c = 1 + GHIA_RE.index(re)
+    return (GHIA_U[:, 0], GHIA_U[:, c]), (GHIA_V[:, 0], GHIA_V[:, c])
 
 
 # =============================================================================
-# Leer VTK rectilinear grid (formato ASCII simple generado por el solver)
+# Loading
 # =============================================================================
-def read_vtk_rectilinear(path):
-    """Devuelve (x_coords, y_coords, field_2d) del VTK RECTILINEAR_GRID."""
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"❌ No se encontró: {path}")
-        
-    with open(path) as f:
-        lines = f.readlines()
+def load_profiles(paths):
+    """Centreline profiles with the wall values (boundary conditions) appended."""
+    du = pd.read_csv(os.path.join(paths.data, "centerline_u.csv"))
+    dv = pd.read_csv(os.path.join(paths.data, "centerline_v.csv"))
+    y = np.concatenate([[0.0], du["y_norm"].values, [1.0]])
+    u = np.concatenate([[0.0], du["u_norm"].values, [U_LID]])
+    x = np.concatenate([[0.0], dv["x_norm"].values, [1.0]])
+    v = np.concatenate([[0.0], dv["v_norm"].values, [0.0]])
+    return (y, u), (x, v)
 
-    x_coords = y_coords = None
-    values = []
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip()
-        if line.startswith("X_COORDINATES"):
-            n = int(line.split()[1])
-            data = []
-            i += 1
-            while len(data) < n:
-                data += list(map(float, lines[i].split()))
-                i += 1
-            x_coords = np.array(data)
+
+def grid_label(F):
+    M, N = F.shape
+    return rf"${N}\times{M}$"
+
+
+# =============================================================================
+# Per-case figures
+# =============================================================================
+def draw_streamfunction(ax, F, psi, mark_centre=True):
+    X, Y = np.meshgrid(F.xf, F.yf)
+    ax.contour(X, Y, psi, levels=PSI_LEVELS_PRIMARY, colors="k",
+               linewidths=0.55, linestyles="solid")
+    ax.contour(X, Y, psi, levels=PSI_LEVELS_SECONDARY, colors=SECONDARY_COLOUR,
+               linewidths=0.45, linestyles="solid")
+    if mark_centre:
+        _, xc, yc = ns.vortex_centre(psi, F.xf, F.yf, sign=-1)
+        ax.plot(xc, yc, marker="+", color="k", ms=5, mew=0.8)
+    domain_frame(ax, F)
+
+
+def domain_frame(ax, F):
+    ax.set_xlim(F.xf[0], F.xf[-1])
+    ax.set_ylim(F.yf[0], F.yf[-1])
+    ns.unit_ticks(ax)
+    ns.plain_axes(ax)
+
+
+def plot_flow_fields(re, F, paths):
+    psi = ns.stream_function(F)
+    omega = ns.vorticity(F, u_north=U_LID)
+
+    fig, axes = plt.subplots(1, 3, figsize=(ns.TEXTWIDTH, 2.0))
+    fig.subplots_adjust(wspace=0.55)
+
+    ax = axes[0]
+    draw_streamfunction(ax, F, psi)
+    ns.panel_title(ax, "a", r"Stream function $\psi$")
+
+    ax = axes[1]
+    X, Y = np.meshgrid(F.xf, F.yf)
+    norm = BoundaryNorm(OMEGA_LEVELS, ncolors=256, extend="both")
+    cf = ax.contourf(X, Y, omega, levels=OMEGA_LEVELS, cmap=ns.CMAP_DIVERGING,
+                     norm=norm, extend="both")
+    ax.contour(X, Y, omega, levels=OMEGA_LEVELS, colors="k", linewidths=0.3)
+    domain_frame(ax, F)
+    ns.colorbar(fig, cf, ax, r"$\omega_z$", ticks=[-5, -3, -1, 0, 1, 3, 5])
+    ns.panel_title(ax, "b", r"Vorticity $\omega_z$")
+
+    ax = axes[2]
+    p = F.p - F.p.mean()
+    lim = np.percentile(np.abs(p), 98)
+    levels = np.linspace(-lim, lim, 21)
+    Xc, Yc = np.meshgrid(F.xc, F.yc)
+    cf = ax.contourf(Xc, Yc, np.clip(p, -lim, lim), levels=levels,
+                     cmap=ns.CMAP_DIVERGING, extend="both")
+    ax.contour(Xc, Yc, p, levels=levels[::2], colors="k", linewidths=0.3)
+    domain_frame(ax, F)
+    tick = float(f"{lim * 0.9:.1g}")
+    ns.colorbar(fig, cf, ax, r"$p - \langle p \rangle$", ticks=[-tick, 0, tick])
+    ns.panel_title(ax, "c", r"Pressure")
+
+    for ax in axes:
+        ax.set_xlabel(r"$x/L$")
+    axes[0].set_ylabel(r"$y/H$")
+    for ax in axes[1:]:
+        ax.set_yticklabels([])
+
+    ns.heading(fig, axes, rf"Lid-driven cavity, $Re = {re}$, grid {grid_label(F)}")
+    ns.save(fig, paths.figures, "flow_fields")
+
+
+def style_profile_axes(ax_u, ax_v):
+    ax_u.axvline(0, color="0.6", lw=0.4, ls=":", zorder=0)
+    ax_v.axhline(0, color="0.6", lw=0.4, ls=":", zorder=0)
+    ax_u.set_xlabel(r"$u/U$")
+    ax_u.set_ylabel(r"$y/H$")
+    ax_u.set_ylim(0, 1)
+    ax_v.set_xlabel(r"$x/L$")
+    ax_v.set_ylabel(r"$v/U$")
+    ax_v.set_xlim(0, 1)
+
+
+def plot_centerlines(re, F, profiles, paths):
+    (y, u), (x, v) = profiles
+    ref = ghia(re)
+
+    fig, (ax_u, ax_v) = plt.subplots(1, 2, figsize=(ns.TEXTWIDTH, 2.6))
+    fig.subplots_adjust(wspace=0.32)
+    ax_u.plot(u, y, color="k", label=rf"Present, {grid_label(F)}")
+    ax_v.plot(x, v, color="k")
+    if ref is not None:
+        (gy, gu), (gx, gv) = ref
+        kw = dict(ls="none", marker="o", mfc="white", mec="k", ms=4, zorder=3)
+        ax_u.plot(gu, gy, label="Ghia et al. (1982)", **kw)
+        ax_v.plot(gx, gv, **kw)
+    style_profile_axes(ax_u, ax_v)
+    ax_u.legend(loc="lower right")
+    ns.panel_title(ax_u, "a", r"$u$ along $x = L/2$")
+    ns.panel_title(ax_v, "b", r"$v$ along $y = H/2$")
+    ns.heading(fig, [ax_u, ax_v], rf"Lid-driven cavity, $Re = {re}$")
+    ns.save(fig, paths.figures, "centerlines")
+
+
+# =============================================================================
+# Cross-case figures
+# =============================================================================
+def re_colours(re_values):
+    norm = LogNorm(vmin=min(re_values), vmax=max(re_values)) if len(re_values) > 1 \
+        else Normalize(vmin=0, vmax=1)
+    return {re: ns.CMAP_SEQUENTIAL(norm(re) if len(re_values) > 1 else 1.0)
+            for re in re_values}, norm
+
+
+def plot_centerline_comparison(cases, out_dir):
+    """Ghia-tabulated Re only: line = present, open symbol = Ghia."""
+    sel = [c for c in cases if c["re"] in GHIA_RE]
+    if not sel:
+        return
+    colours, _ = re_colours([c["re"] for c in sel])
+
+    fig, (ax_u, ax_v) = plt.subplots(1, 2, figsize=(ns.TEXTWIDTH, 3.0))
+    fig.subplots_adjust(wspace=0.32)
+    handles = []
+    for k, c in enumerate(sel):
+        re, col, mk = c["re"], colours[c["re"]], ns.MARKERS[k % len(ns.MARKERS)]
+        (y, u), (x, v) = c["profiles"]
+        (gy, gu), (gx, gv) = ghia(re)
+        ax_u.plot(u, y, color=col, lw=0.9)
+        ax_v.plot(x, v, color=col, lw=0.9)
+        kw = dict(ls="none", marker=mk, mfc="white", mec=col, ms=3.6, mew=0.7, zorder=3)
+        ax_u.plot(gu, gy, **kw)
+        ax_v.plot(gx, gv, **kw)
+        handles.append(Line2D([], [], color=col, lw=0.9, marker=mk, mfc="white",
+                              mec=col, ms=3.6, mew=0.7, label=rf"$Re = {re}$"))
+    style_profile_axes(ax_u, ax_v)
+    ns.panel_title(ax_u, "a", r"$u$ along $x = L/2$")
+    ns.panel_title(ax_v, "b", r"$v$ along $y = H/2$")
+
+    key = [Line2D([], [], color="k", lw=0.9, label="Present"),
+           Line2D([], [], ls="none", marker="o", mfc="white", mec="k", ms=3.6,
+                  label="Ghia et al. (1982)")]
+    ns.legend_above(fig, [ax_u, ax_v], handles + key, ncol=min(4, len(handles) + 2))
+    ns.save(fig, out_dir, "centerline_comparison")
+
+
+def plot_centerline_trend(cases, out_dir):
+    """Every computed Re (no reference), coloured continuously by Re."""
+    res = [c["re"] for c in cases]
+    if len(res) < 2:
+        return
+    colours, norm = re_colours(res)
+
+    fig, (ax_u, ax_v) = plt.subplots(1, 2, figsize=(ns.TEXTWIDTH, 2.6))
+    fig.subplots_adjust(wspace=0.32, right=0.86)
+    for c in cases:
+        (y, u), (x, v) = c["profiles"]
+        ax_u.plot(u, y, color=colours[c["re"]], lw=0.8)
+        ax_v.plot(x, v, color=colours[c["re"]], lw=0.8)
+    style_profile_axes(ax_u, ax_v)
+    ns.panel_title(ax_u, "a", r"$u$ along $x = L/2$")
+    ns.panel_title(ax_v, "b", r"$v$ along $y = H/2$")
+
+    cax = fig.add_axes([0.89, 0.11, 0.015, 0.77])
+    cb = fig.colorbar(ScalarMappable(norm=norm, cmap=ns.CMAP_SEQUENTIAL), cax=cax)
+    cb.set_label(r"$Re$")
+    cb.set_ticks([r for r in res if r in GHIA_RE] or res)
+    cb.set_ticklabels([str(r) for r in (cb.get_ticks())])
+    cb.ax.minorticks_off()
+    cb.ax.tick_params(direction="in", width=0.5, length=2.5)
+    cb.outline.set_linewidth(0.5)
+    ns.save(fig, out_dir, "centerline_trend")
+
+
+def plot_streamfunction_overview(cases, out_dir):
+    sel = [c for c in cases if c["re"] in GHIA_RE] or cases
+    sel = sel[:6]
+    ncol = min(3, len(sel))
+    nrow = int(np.ceil(len(sel) / ncol))
+    w = ns.TEXTWIDTH
+    fig, axes = plt.subplots(nrow, ncol, figsize=(w, w / ncol * nrow * 1.02),
+                             squeeze=False)
+    fig.subplots_adjust(wspace=0.12, hspace=0.22)
+    for k, ax in enumerate(axes.flat):
+        if k >= len(sel):
+            ax.set_visible(False)
             continue
-        if line.startswith("Y_COORDINATES"):
-            n = int(line.split()[1])
-            data = []
-            i += 1
-            while len(data) < n:
-                data += list(map(float, lines[i].split()))
-                i += 1
-            y_coords = np.array(data)
-            continue
-        if line.startswith("LOOKUP_TABLE"):
-            i += 1
-            while i < len(lines) and not lines[i].strip().startswith(("SCALARS", "VECTORS")):
-                tok = lines[i].split()
-                values += list(map(float, tok))
-                i += 1
-            continue
-        i += 1
-
-    N = len(x_coords) - 1
-    M = len(y_coords) - 1
-    
-    # Manejo seguro del reshape
-    if len(values) < (N * M):
-        print(f"Advertencia en {os.path.basename(path)}: Faltan valores para llenar la malla.")
-        field = np.zeros((M, N)) # Evita que el script pete
-    elif len(values) > (N * M) and len(values) % (N * M) == 0:
-        # Probablemente exportó vectores de 3 componentes (u, v, w)
-        num_components = len(values) // (N * M)
-        field_3d = np.array(values).reshape(M, N, num_components)
-        field = field_3d[:, :, 0] # Toma la magnitud principal
-    else:
-        # Formato normal escalar
-        field = np.array(values[:N * M]).reshape(M, N)   # (j, i)
-        
-    # Cell centres
-    xc = 0.5 * (x_coords[:-1] + x_coords[1:])
-    yc = 0.5 * (y_coords[:-1] + y_coords[1:])
-    return xc, yc, field
+        c = sel[k]
+        draw_streamfunction(ax, c["F"], ns.stream_function(c["F"]))
+        ax.set_title(rf"$Re = {c['re']}$")
+        r, q = divmod(k, ncol)
+        if q == 0:
+            ax.set_ylabel(r"$y/H$")
+        else:
+            ax.set_yticklabels([])
+        if r == nrow - 1 or k + ncol >= len(sel):
+            ax.set_xlabel(r"$x/L$")
+        else:
+            ax.set_xticklabels([])
+    key = [Line2D([], [], color="k", lw=0.6, label=r"Primary vortex, $\psi < 0$"),
+           Line2D([], [], color=SECONDARY_COLOUR, lw=0.6,
+                  label=r"Secondary eddies, $\psi > 0$"),
+           Line2D([], [], ls="none", marker="+", color="k", ms=5, mew=0.8,
+                  label=r"Vortex centre, $\psi_{\min}$")]
+    ns.legend_above(fig, axes, key, ncol=3)
+    ns.save(fig, out_dir, "streamfunction_overview")
 
 
-def list_reynolds_cases(output_dir):
-    cases = []
-    if not os.path.isdir(output_dir):
-        return cases
-    for name in os.listdir(output_dir):
-        m = re.fullmatch(r"Re_(\d+)", name)
-        if m and os.path.isdir(os.path.join(output_dir, name)):
-            cases.append(int(m.group(1)))
-    return sorted(cases)
-
-
-def load_case(case_dir):
-    df_u = pd.read_csv(os.path.join(case_dir, "centerline_u.csv"))
-    df_v = pd.read_csv(os.path.join(case_dir, "centerline_v.csv"))
-    xc_p, yc_p, p_field = read_vtk_rectilinear(os.path.join(case_dir, "pressure.vtk"))
-    xc_u, yc_u, u_field = read_vtk_rectilinear(os.path.join(case_dir, "u_velocity.vtk"))
-    xc_v, yc_v, v_field = read_vtk_rectilinear(os.path.join(case_dir, "v_velocity.vtk"))
-    return df_u, df_v, xc_p, yc_p, p_field, xc_u, yc_u, u_field, xc_v, yc_v, v_field
-
-
-def plot_case(re_value, case_dir):
-    df_u, df_v, xc_p, yc_p, p_field, xc_u, yc_u, u_field, xc_v, yc_v, v_field = load_case(case_dir)
-
-    ghia_col = ghia_column_for_re(re_value)
-    ghia_u = np.column_stack([ghia_u_table[:, 0], ghia_u_table[:, 1 + ghia_col]])
-    ghia_v = np.column_stack([ghia_v_table[:, 0], ghia_v_table[:, 1 + ghia_col]])
-
-    fig = plt.figure(figsize=(16, 10))
-    fig.suptitle(f"Lid-Driven Cavity  —  Re = {re_value}", fontsize=14, fontweight="bold")
-    gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.38, wspace=0.32)
-
-    ax_p = fig.add_subplot(gs[0, 0])
-    Xp, Yp = np.meshgrid(xc_p, yc_p)
-    cp = ax_p.contourf(Xp, Yp, p_field, levels=40, cmap="RdBu_r")
-    fig.colorbar(cp, ax=ax_p, label="p")
-    ax_p.set_title("Presion")
-    ax_p.set_xlabel("x"); ax_p.set_ylabel("y"); ax_p.set_aspect("equal")
-
-    ax_u2d = fig.add_subplot(gs[0, 1])
-    Xu, Yu = np.meshgrid(xc_u, yc_u)
-    cu = ax_u2d.contourf(Xu, Yu, u_field, levels=40, cmap="coolwarm")
-    fig.colorbar(cu, ax=ax_u2d, label="u")
-    ax_u2d.set_title("Velocidad u")
-    ax_u2d.set_xlabel("x"); ax_u2d.set_ylabel("y"); ax_u2d.set_aspect("equal")
-
-    ax_v2d = fig.add_subplot(gs[0, 2])
-    Xv, Yv = np.meshgrid(xc_v, yc_v)
-    cv = ax_v2d.contourf(Xv, Yv, v_field, levels=40, cmap="coolwarm")
-    fig.colorbar(cv, ax=ax_v2d, label="v")
-    ax_v2d.set_title("Velocidad v")
-    ax_v2d.set_xlabel("x"); ax_v2d.set_ylabel("y"); ax_v2d.set_aspect("equal")
-
-    ax_uc = fig.add_subplot(gs[1, 0])
-    ax_uc.plot(df_u["u_norm"], df_u["y_norm"], color="steelblue", linewidth=2, label="Solver")
-    ax_uc.scatter(ghia_u[:, 1], ghia_u[:, 0], color="red", zorder=5, s=40, label=f"Ghia Re={GHIA_RE_LIST[ghia_col]}")
-    ax_uc.set_xlabel("u / U_lid"); ax_uc.set_ylabel("y / H")
-    ax_uc.set_title("u(y)  x=L/2"); ax_uc.grid(True, alpha=0.3); ax_uc.legend(fontsize=8)
-
-    ax_vc = fig.add_subplot(gs[1, 1])
-    ax_vc.plot(df_v["x_norm"], df_v["v_norm"], color="steelblue", linewidth=2, label="Solver")
-    ax_vc.scatter(ghia_v[:, 0], ghia_v[:, 1], color="red", zorder=5, s=40, label=f"Ghia Re={GHIA_RE_LIST[ghia_col]}")
-    ax_vc.set_xlabel("x / L"); ax_vc.set_ylabel("v / U_lid")
-    ax_vc.set_title("v(x)  y=H/2"); ax_vc.grid(True, alpha=0.3); ax_vc.legend(fontsize=8)
-
-    ax_str = fig.add_subplot(gs[1, 2])
-    ny, nx = len(yc_p), len(xc_p)
-    u_on_p = 0.5 * (u_field[:, :-1] + u_field[:, 1:]) if u_field.shape[1] > nx else u_field[:ny, :nx]
-    v_on_p = 0.5 * (v_field[:-1, :] + v_field[1:, :]) if v_field.shape[0] > ny else v_field[:ny, :nx]
-    u_on_p = u_on_p[:ny, :nx]
-    v_on_p = v_on_p[:ny, :nx]
-    x_uni = np.linspace(xc_p[0], xc_p[-1], nx)
-    y_uni = np.linspace(yc_p[0], yc_p[-1], ny)
-    interp_u = RegularGridInterpolator((yc_p, xc_p), u_on_p, method="linear")
-    interp_v = RegularGridInterpolator((yc_p, xc_p), v_on_p, method="linear")
-    Xuu, Yuu = np.meshgrid(x_uni, y_uni)
-    pts = np.stack([Yuu.ravel(), Xuu.ravel()], axis=1)
-    u_uni = interp_u(pts).reshape(ny, nx)
-    v_uni = interp_v(pts).reshape(ny, nx)
-    speed = np.sqrt(u_uni ** 2 + v_uni ** 2)
-    ax_str.streamplot(x_uni, y_uni, u_uni, v_uni, color=speed, cmap="inferno", density=1.5, linewidth=0.8)
-    ax_str.set_title("Lineas de corriente")
-    ax_str.set_xlabel("x"); ax_str.set_ylabel("y"); ax_str.set_aspect("equal")
-
-    save_path = os.path.join(case_dir, "validation.png")
-    plt.savefig(save_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Figura guardada: {save_path}")
-    return df_u
-
-
-def plot_multi_re_u(output_dir, re_cases, u_profiles):
-    plt.figure(figsize=(7, 6))
-    for re_value, df_u in zip(re_cases, u_profiles):
-        plt.plot(df_u["u_norm"], df_u["y_norm"], linewidth=1.8, label=f"Solver Re={re_value}")
-        ghia_col = ghia_column_for_re(re_value)
-        ghia_u = np.column_stack([ghia_u_table[:, 0], ghia_u_table[:, 1 + ghia_col]])
-        plt.scatter(ghia_u[:, 1], ghia_u[:, 0], s=14, alpha=0.8)
-    plt.xlabel("u / U_lid")
-    plt.ylabel("y / H")
-    plt.title("Comparacion de perfiles u(x=L/2,y)")
-    plt.grid(True, alpha=0.3)
-    plt.legend(fontsize=8)
-    save_path = os.path.join(output_dir, "validation_all_re_u.png")
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=150)
-    plt.close()
-    print(f"Figura global guardada: {save_path}")
+# =============================================================================
+# Quantitative validation
+# =============================================================================
+def validation_row(c):
+    re, F = c["re"], c["F"]
+    M, N = F.shape
+    psi_min, xc, yc = ns.vortex_centre(ns.stream_function(F), F.xf, F.yf, sign=-1)
+    row = {"Re": re, "grid": f"{N}x{M}", "psi_min": psi_min, "x_c": xc, "y_c": yc}
+    ref = ghia(re)
+    if ref is not None:
+        (y, u), (x, v) = c["profiles"]
+        (gy, gu), (gx, gv) = ref
+        iu = (gy > 0) & (gy < 1)
+        iv = (gx > 0) & (gx < 1)
+        eu = np.interp(gy[iu], y, u) - gu[iu]
+        ev = np.interp(gx[iv], x, v) - gv[iv]
+        g_psi, g_x, g_y = GHIA_PRIMARY[re]
+        row.update({
+            "psi_min_ghia": g_psi, "x_c_ghia": g_x, "y_c_ghia": g_y,
+            "psi_min_rel_err_pct": 100 * abs(psi_min - g_psi) / abs(g_psi),
+            "u_rms_err": np.sqrt(np.mean(eu ** 2)), "u_max_err": np.max(np.abs(eu)),
+            "v_rms_err": np.sqrt(np.mean(ev ** 2)), "v_max_err": np.max(np.abs(ev)),
+        })
+    return row
 
 
 def main():
-    print(f"Buscando resultados en: {OUTPUT_DIR}")
-    re_cases = list_reynolds_cases(OUTPUT_DIR)
-    if not re_cases:
-        raise RuntimeError("No se encontraron carpetas output/Re_<N>.")
+    ns.apply_style()
+    re_list = ns.list_cases(SCENARIO, "Re")
+    if not re_list:
+        raise SystemExit(f"No output/{SCENARIO}/Re_<N>/ folders found — run the solver first.")
+    print(f"Lid-driven cavity, cases: {re_list}")
 
-    print(f"Casos detectados: {re_cases}")
-    u_profiles = []
-    for re_value in re_cases:
-        case_dir = os.path.join(OUTPUT_DIR, f"Re_{re_value}")
-        u_profiles.append(plot_case(re_value, case_dir))
+    cases = []
+    for re in re_list:
+        paths = ns.case_paths(SCENARIO, "Re", re)
+        F = ns.load_staggered(paths.fields)
+        profiles = load_profiles(paths)
+        plot_flow_fields(re, F, paths)
+        plot_centerlines(re, F, profiles, paths)
+        cases.append({"re": re, "F": F, "profiles": profiles})
 
-    plot_multi_re_u(OUTPUT_DIR, re_cases, u_profiles)
+    out = os.path.join(ns.scenario_dir(SCENARIO), "figures")
+    resolved = [c for c in cases if min(c["F"].shape) >= MIN_CELLS_SUMMARY]
+    skipped = [c["re"] for c in cases if c not in resolved]
+    print(f"Summary figures (grids >= {MIN_CELLS_SUMMARY} cells; omitted Re = {skipped}):")
+    plot_centerline_comparison(resolved, out)
+    plot_centerline_trend(resolved, out)
+    plot_streamfunction_overview(resolved, out)
+
+    df = pd.DataFrame([validation_row(c) for c in cases])
+    csv = os.path.join(ns.scenario_dir(SCENARIO), "validation_summary.csv")
+    df.to_csv(csv, index=False, float_format="%.6g")
+    print(f"  {os.path.relpath(csv, ns.PROJECT_ROOT)}\n")
+    cols = [c for c in ["Re", "grid", "psi_min", "psi_min_ghia", "psi_min_rel_err_pct",
+                        "u_rms_err", "v_rms_err"] if c in df]
+    print(df[cols].to_string(index=False, float_format=lambda v: f"{v:.4f}"))
 
 
 if __name__ == "__main__":

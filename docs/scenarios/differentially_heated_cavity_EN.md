@@ -419,11 +419,11 @@ Nu_avg += (Twall - T[k]) / dist * dy;   // local flux * cell height
 Nu_avg /= H_domain;
 ```
 
-Outputs per case (in `output/Ra_<value>/`):
+Outputs per case (in `output/differentially_heated_cavity/Ra_<value>/`):
 
-- `temperature.vtk`, `u_velocity.vtk`, `v_velocity.vtk`, `pressure.vtk` (fields in
+- `fields/{temperature,u_velocity,v_velocity,pressure}.vtk` (fields in
   rectilinear VTK format, [main.cpp:266-270](../../src/main.cpp#L266-L270)).
-- `dhc_metrics.csv` with `Ra, Pr, u_max, v_max, Nu_avg`.
+- `data/dhc_metrics.csv` with `Ra, Pr, u_max, v_max, Nu_avg`.
 
 ---
 
@@ -464,8 +464,8 @@ rayleigh_cases.txt → read_rayleigh_cases → list of Ra
  ───────────────────────→│ 6. energy.advance(θ, u*, v*)        (α∇²θ − (u·∇)θ, AB2)    │
                          └──────────────────────────────────────────────────────────────┘
                                          │
-                                         └─→ output/Ra_*/{temperature,u,v,pressure}.vtk
-                                                        dhc_metrics.csv (u_max,v_max,Nu)
+                                         └─→ output/differentially_heated_cavity/Ra_*/fields/*.vtk
+                                                        data/dhc_metrics.csv (u_max,v_max,Nu)
 ```
 
 ---

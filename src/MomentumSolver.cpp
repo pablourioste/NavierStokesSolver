@@ -132,6 +132,17 @@ void MomentumSolver::applyBoundaryConditions(Vector& u, Vector& v) const
     for (int l = 2; l <= M; ++l)
         for (int i = 1; i <= N; ++i)
             if (vNodeOnObstacleSurface(pMesh_, i, l)) v[vIdx(i, l)] = 0.0;
+
+    // Nodes strictly inside the solid never enter a fluid stencil (neighbours
+    // use the image ghost instead), but the projection would otherwise leave
+    // non-physical values there that end up in the exported fields.
+    for (int j = 1; j <= M; ++j)
+        for (int k = 2; k <= N; ++k)
+            if (uNodeBlocked(pMesh_, k, j)) u[uIdx(k, j)] = 0.0;
+
+    for (int l = 2; l <= M; ++l)
+        for (int i = 1; i <= N; ++i)
+            if (vNodeBlocked(pMesh_, i, l)) v[vIdx(i, l)] = 0.0;
 }
 
 
@@ -160,7 +171,7 @@ double MomentumSolver::uRHS(const Vector& u, const Vector& v,
         dx_e = uMesh_.cells[uIdx(k+1, j)].x - x_P;
     } else {
         u_E  = -u_P;
-        dx_e = 2.0 * (pMesh_.obstacle_xmax - x_P);
+        dx_e = 2.0 * (pMesh_.obstacle_xmin - x_P);   // solid to the east: wall = obstacle WEST face
     }
 
     double u_W, dx_w;
@@ -169,7 +180,7 @@ double MomentumSolver::uRHS(const Vector& u, const Vector& v,
         dx_w = x_P - uMesh_.cells[uIdx(k-1, j)].x;
     } else {
         u_W  = -u_P;
-        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmin);
+        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmax);   // solid to the west: wall = obstacle EAST face
     }
 
     // ---- Neighbours and distances in y ----
@@ -185,7 +196,7 @@ double MomentumSolver::uRHS(const Vector& u, const Vector& v,
     } else if (south_blocked) {
         // Obstacle surface, no-slip: ghost = -u_P (u_wall = 0).
         u_S  = -u_P;
-        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymin);
+        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymax);   // solid to the south: wall = obstacle TOP face
     } else {
         // Image/ghost-cell method: ghost = 2*u_wall - u_P, distance = 2*(y_P - wall)
         // Ensures (u_ghost + u_P)/2 = u_wall at the south face, and gives
@@ -202,7 +213,7 @@ double MomentumSolver::uRHS(const Vector& u, const Vector& v,
         dy_n = uMesh_.cells[uIdx(k, j+1)].y - y_P;
     } else if (north_blocked) {
         u_N  = -u_P;
-        dy_n = 2.0 * (pMesh_.obstacle_ymax - y_P);
+        dy_n = 2.0 * (pMesh_.obstacle_ymin - y_P);   // solid to the north: wall = obstacle BOTTOM face
     } else {
         // Image/ghost-cell method: ghost = 2*u_wall - u_P, distance = 2*(wall - y_P)
         // For lid: u_wall = U_ref → ghost = 2*U_ref - u_P
@@ -261,7 +272,7 @@ double MomentumSolver::vRHS(const Vector& u, const Vector& v,
         dy_n = vMesh_.cells[vIdx(i, l+1)].y - y_P;
     } else {
         v_N  = -v_P;
-        dy_n = 2.0 * (pMesh_.obstacle_ymax - y_P);
+        dy_n = 2.0 * (pMesh_.obstacle_ymin - y_P);   // solid to the north: wall = obstacle BOTTOM face
     }
 
     double v_S, dy_s;
@@ -270,7 +281,7 @@ double MomentumSolver::vRHS(const Vector& u, const Vector& v,
         dy_s = y_P - vMesh_.cells[vIdx(i, l-1)].y;
     } else {
         v_S  = -v_P;
-        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymin);
+        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymax);   // solid to the south: wall = obstacle TOP face
     }
 
     // ---- Neighbours and distances in x ----
@@ -285,7 +296,7 @@ double MomentumSolver::vRHS(const Vector& u, const Vector& v,
         dx_w = x_P - vMesh_.cells[vIdx(i-1, l)].x;
     } else if (west_blocked) {
         v_W  = -v_P;
-        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmin);
+        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmax);   // solid to the west: wall = obstacle EAST face
     } else {
         // Image/ghost-cell method: ghost = 2*v_wall - v_P, distance = 2*(x_P - wall)
         v_W  = 2.0 * v_ghost_west_ - v_P;
@@ -300,7 +311,7 @@ double MomentumSolver::vRHS(const Vector& u, const Vector& v,
         dx_e = vMesh_.cells[vIdx(i+1, l)].x - x_P;
     } else if (east_blocked) {
         v_E  = -v_P;
-        dx_e = 2.0 * (pMesh_.obstacle_xmax - x_P);
+        dx_e = 2.0 * (pMesh_.obstacle_xmin - x_P);   // solid to the east: wall = obstacle WEST face
     } else {
         // Image/ghost-cell method: ghost = 2*v_wall - v_P, distance = 2*(wall - x_P)
         v_E  = 2.0 * v_ghost_east_ - v_P;
@@ -351,15 +362,20 @@ void MomentumSolver::advance(Vector& u, Vector& v, double dt)
     const int M = pMesh_.M_cells_y;
 
     // --- Compute current RHS R^n ---
+    // Nodes on an immersed obstacle's faces or inside it are not unknowns
+    // (applyBoundaryConditions holds them at 0): skip them, so the stencils
+    // below are only ever evaluated at genuine fluid nodes.
     Vector rhs_u(u.size(), 0.0);
     for (int j = 1; j <= M; ++j)
         for (int k = 2; k <= N; ++k)
-            rhs_u[uIdx(k, j)] = uRHS(u, v, k, j);
+            if (!uNodeOnObstacleSurface(pMesh_, k, j) && !uNodeBlocked(pMesh_, k, j))
+                rhs_u[uIdx(k, j)] = uRHS(u, v, k, j);
 
     Vector rhs_v(v.size(), 0.0);
     for (int l = 2; l <= M; ++l)
         for (int i = 1; i <= N; ++i)
-            rhs_v[vIdx(i, l)] = vRHS(u, v, i, l);
+            if (!vNodeOnObstacleSurface(pMesh_, i, l) && !vNodeBlocked(pMesh_, i, l))
+                rhs_v[vIdx(i, l)] = vRHS(u, v, i, l);
 
     if (first_step_) {
         // Step 0: no R^{n-1} available → plain Euler

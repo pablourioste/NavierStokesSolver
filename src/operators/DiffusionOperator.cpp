@@ -38,7 +38,7 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
         dx_w = x_P - uMesh_.cells[uIdx(k - 1, j)].x;
     } else {
         u_W  = -u_P0;
-        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmin);
+        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmax);   // solid to the west: wall = obstacle EAST face
     }
 
     double u_E, dx_e;
@@ -47,7 +47,7 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
         dx_e = uMesh_.cells[uIdx(k + 1, j)].x - x_P;
     } else {
         u_E  = -u_P0;
-        dx_e = 2.0 * (pMesh_.obstacle_xmax - x_P);
+        dx_e = 2.0 * (pMesh_.obstacle_xmin - x_P);   // solid to the east: wall = obstacle WEST face
     }
 
     // Vecinos en y — celdas fantasma en las paredes N/S, o en la superficie
@@ -66,7 +66,7 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
         // No-slip en la superficie del obstáculo: ghost = -u_P (u_wall = 0),
         // distancia a la cara sur del obstáculo (coordenada exacta, snapped).
         u_S  = -u_P0;
-        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymin);
+        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymax);   // solid to the south: wall = obstacle TOP face
     } else {
         // Pared Sur: método imagen → ghost = 2·u_wall − u_P
         u_S  = 2.0 * u_ghost_south_ - u_P0;
@@ -79,7 +79,7 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
         dy_n = uMesh_.cells[uIdx(k, j + 1)].y - y_P;
     } else if (north_blocked) {
         u_N  = -u_P0;
-        dy_n = 2.0 * (pMesh_.obstacle_ymax - y_P);
+        dy_n = 2.0 * (pMesh_.obstacle_ymin - y_P);   // solid to the north: wall = obstacle BOTTOM face
     } else {
         // Pared Norte: método imagen → ghost = 2·u_wall − u_P
         u_N  = 2.0 * u_ghost_north_ - u_P0;
@@ -118,7 +118,7 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
         dy_s = y_P - vMesh_.cells[vIdx(i, l - 1)].y;
     } else {
         v_S  = -v_P0;
-        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymin);
+        dy_s = 2.0 * (y_P - pMesh_.obstacle_ymax);   // solid to the south: wall = obstacle TOP face
     }
 
     double v_N, dy_n;
@@ -127,7 +127,7 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
         dy_n = vMesh_.cells[vIdx(i, l + 1)].y - y_P;
     } else {
         v_N  = -v_P0;
-        dy_n = 2.0 * (pMesh_.obstacle_ymax - y_P);
+        dy_n = 2.0 * (pMesh_.obstacle_ymin - y_P);   // solid to the north: wall = obstacle BOTTOM face
     }
 
     // Vecinos en x — celdas fantasma en las paredes O/E, o en la superficie
@@ -141,7 +141,7 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
         dx_w = x_P - vMesh_.cells[vIdx(i - 1, l)].x;
     } else if (west_blocked) {
         v_W  = -v_P0;
-        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmin);
+        dx_w = 2.0 * (x_P - pMesh_.obstacle_xmax);   // solid to the west: wall = obstacle EAST face
     } else {
         // Pared Oeste: método imagen → ghost = 2·v_wall − v_P
         v_W  = 2.0 * v_ghost_west_ - v_P0;
@@ -154,7 +154,7 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
         dx_e = vMesh_.cells[vIdx(i + 1, l)].x - x_P;
     } else if (east_blocked) {
         v_E  = -v_P0;
-        dx_e = 2.0 * (pMesh_.obstacle_xmax - x_P);
+        dx_e = 2.0 * (pMesh_.obstacle_xmin - x_P);   // solid to the east: wall = obstacle WEST face
     } else {
         // Pared Este: método imagen → ghost = 2·v_wall − v_P
         v_E  = 2.0 * v_ghost_east_ - v_P0;

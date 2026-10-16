@@ -1,3 +1,4 @@
 # Reynolds numbers to sweep for the Square Cylinder scenario.
-# Targets the vortex-shedding regime (literature St ~ 0.13-0.15 at Re ~ 100-200).
+# Targets the vortex-shedding regime; reference values in
+# docs/scenarios/square_cylinder_validation.md.
 150

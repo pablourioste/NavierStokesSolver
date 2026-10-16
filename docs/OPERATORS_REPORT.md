@@ -462,22 +462,20 @@ is ever corrected, the rate should jump from ~1 to ~2.
 
 ## 5. Convergence Plots — `plot_convergence.py`
 
-Running `./build/operator_verify` writes `output/convergence.csv`. The script
-`plotters/plot_convergence.py` reads this file and produces `output/convergence_rates.png`,
-a 2×3 figure analogous to Fig. 5 of the reference paper:
+Running `./build/operator_verify` writes `output/verification/data/convergence.csv`. The
+script `plotters/plot_convergence.py` reads this file and produces
+`output/verification/figures/convergence_rates.{pdf,png}`, a 1×3 figure:
 
 | Panel | Content |
 |-------|---------|
-| (0,0) | Log-log: Laplacian L∞ vs h=1/N, with O(h²) and O(h) reference lines |
-| (0,1) | Log-log: Gradient ∂p/∂x and ∂p/∂y L∞ vs h |
-| (0,2) | Log-log: Divergence L∞ vs h |
-| (1,0) | Log-log: Diffusion U and V L∞ vs h (Suites 4 and 6) |
-| (1,1) | Semi-log: D·G identity and adjoint residuals vs N (Suites 5 and 8 — should be ~1e-13) |
-| (1,2) | Log-log: Laplacian uniform (Suite 1) vs stretched mesh (Suite 10) |
+| (a) | Log-log: L∞ error vs h = 1/N for the Laplacian, gradient, divergence and diffusion operators on a uniform mesh (Suites 1–4, 6), with a slope-2 triangle |
+| (b) | Log-log: Laplacian on a uniform (Suite 1) vs. stretched (Suite 10) mesh, slope-2 and slope-1 triangles |
+| (c) | Semi-log: residuals of the D·G, adjoint and SPD-symmetry identities vs N (Suites 5, 8, 9), with machine epsilon marked |
 
-Each log-log panel carries an estimated slope annotation. A slope ≈ 2.0 on panels (0,0)–(1,0)
-is visual proof of second-order accuracy. The flat residual lines in panel (1,1) confirm that
-the algebraic identities hold at floating-point precision irrespective of mesh refinement.
+The observed order *p* (fit over the two finest meshes) is printed in each legend entry. *p* ≈ 2
+in panel (a) confirms second-order accuracy; the residuals in panel (c) stay at
+floating-point level irrespective of mesh refinement. Suite 7 is exactly zero and is not drawn
+on the log axis.
 
 ---
 
@@ -487,7 +485,7 @@ the algebraic identities hold at floating-point precision irrespective of mesh r
 # Build
 cd build_cmake && cmake .. -DCMAKE_BUILD_TYPE=Release && make operator_verify -j4
 
-# Run verification (also writes output/convergence.csv)
+# Run verification (also writes output/verification/data/convergence.csv)
 ./build/operator_verify
 
 # Expected console output:
@@ -500,5 +498,5 @@ cd build_cmake && cmake .. -DCMAKE_BUILD_TYPE=Release && make operator_verify -j
 
 # Plot convergence rates
 python3 plotters/plot_convergence.py
-# → output/convergence_rates.png
+# → output/verification/figures/convergence_rates.{pdf,png}
 ```

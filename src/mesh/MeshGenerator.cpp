@@ -985,6 +985,7 @@ void MeshConfig::inspect_mesh(const GridData& mesh) const {
 // Función para parsear el string del archivo a Enum
 BCType string_to_bc_enum(const string& s) {
     if (s == "INLET") return INLET;
+    if (s == "INLET_PARABOLIC") return INLET;   // per-face profile, see define_boundaries
     if (s == "OUTLET") return OUTLET;
     if (s == "WALL") return WALL_ADIABATIC; // Por defecto
     if (s == "WALL_FIXED_VALUE") return WALL_FIXED_VALUE;
@@ -1047,12 +1048,24 @@ void MeshConfig::define_boundaries(GridData& mesh, const std::string& filename) 
 
             BCType type_enum = string_to_bc_enum(type_str);
 
+            // INLET_PARABOLIC (WEST/EAST only): fully developed channel profile
+            // u(y) = 4 U_max (y - y0)(y1 - y) / H^2, with U_max = val on the axis.
+            const bool parabolic = (type_str == "INLET_PARABOLIC");
+            if (parabolic && face_dir != "WEST" && face_dir != "EAST") {
+                cerr << "Error: INLET_PARABOLIC solo admite WEST/EAST" << endl;
+            }
+            const double y0 = mesh.yvc.front();
+            const double y1 = mesh.yvc.back();
+            const double H  = y1 - y0;
+
             for (int k = idx_start; k < idx_end; ++k) {
                 // Como los vectores de frontera tienen tamaño exacto, verificamos k
                 if (k < (int)target_vec->size()) {
-                    (*target_vec)[k].type  = type_enum;
-                    (*target_vec)[k].value = val;
-                    (*target_vec)[k].boco  = boco_name;
+                    BoundaryFace& f = (*target_vec)[k];
+                    f.type  = type_enum;
+                    f.value = parabolic ? 4.0 * val * (f.y - y0) * (y1 - f.y) / (H * H)
+                                        : val;
+                    f.boco  = boco_name;
                 }
             }
             cout << " -> Boco [" << boco_name << "] " << type_str << " en " << face_dir

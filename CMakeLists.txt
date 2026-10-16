@@ -105,3 +105,11 @@ target_compile_options(operator_verify PRIVATE -Wall -Wextra -O2)
 message(STATUS "Source dir : ${CMAKE_SOURCE_DIR}")
 message(STATUS "Build dir  : ${CMAKE_BINARY_DIR}")
 message(STATUS "Executable : ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mesh_gen")
+
+# OpenMP: parallel pressure solver (PCG). Optional — builds serially without it.
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    foreach(t mesh_gen reynolds_sweep operator_verify)
+        target_link_libraries(${t} PRIVATE OpenMP::OpenMP_CXX)
+    endforeach()
+endif()

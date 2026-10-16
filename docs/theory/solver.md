@@ -62,7 +62,8 @@ operators, each used by one or more solvers above:
   a known analytic field is differentiated by hand, the discrete operator is
   applied to its sampled values, and the error is measured at increasing mesh
   resolution. `plotters/plot_convergence.py` turns
-  `output/convergence.csv` into `output/convergence_rates.png`, expecting a
+  `output/verification/data/convergence.csv` into
+  `output/verification/figures/convergence_rates.{pdf,png}`, expecting a
   slope of ≈2.0 (2nd order) in log-log error-vs-$h$ plots.
 - **Known limitation (stretched meshes):** on a **non-uniform** (stretched)
   mesh, `LaplaceOperator`'s stencil `a_E = Se/(x[i+1]-x[i])` degrades to

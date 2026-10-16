@@ -1,0 +1,10 @@
+# =============================================================================
+# Breuer et al. (2000): parabolic inflow u(y) = 4 U_max y (H - y) / H^2 with
+# U_max = U_inf in sim_params.txt (so Re = U_max D / nu, as in the reference),
+# zero-gradient outlet, no-slip channel walls.
+# Formato: BOCO_NAME  CARA  IDX_START  IDX_END  TIPO     VALOR
+# =============================================================================
+inlet         WEST    0       9999     INLET_PARABOLIC    1.0
+outlet        EAST    0       9999     OUTLET             0.0
+wall_north    NORTH   0       9999     WALL               0.0
+wall_south    SOUTH   0       9999     WALL               0.0

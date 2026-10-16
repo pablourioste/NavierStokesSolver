@@ -31,12 +31,14 @@ std::pair<double, double> ObstacleForces::computeForces(const Vector& p,
                 // is x), no-slip at the obstacle surface -> one-sided diff
                 // between the fluid-side V-node and the (zero) wall value,
                 // same ghost distance as DiffusionOperator's west/east branch.
+                // The shear stress mu*dv/dx on an x-normal face acts along y,
+                // so it contributes to the LIFT, not the drag.
                 const double v_S = v[vIdx(i, j)];
                 const double v_N = v[vIdx(i, j + 1)];
                 const double v_avg = 0.5 * (v_S + v_N);
                 const double dist = pMesh_.obstacle_xmin - pMesh_.x[i];
                 const double dv_dn = (0.0 - v_avg) / dist;
-                Fx += -rho_ * nu_ * dv_dn * area;
+                Fy += -rho_ * nu_ * dv_dn * area;
             }
             // West face of fluid cell (i,j) touches the obstacle's east face.
             if (i > 1 && pMesh_.cells[pIdx(i - 1, j)].is_solid) {
@@ -49,7 +51,7 @@ std::pair<double, double> ObstacleForces::computeForces(const Vector& p,
                 const double v_avg = 0.5 * (v_S + v_N);
                 const double dist = pMesh_.x[i] - pMesh_.obstacle_xmax;
                 const double dv_dn = (v_avg - 0.0) / dist;
-                Fx += rho_ * nu_ * dv_dn * area;
+                Fy += rho_ * nu_ * dv_dn * area;       // shear along y -> lift
             }
             // North face of fluid cell (i,j) touches the obstacle's south face.
             if (j < M && pMesh_.cells[pIdx(i, j + 1)].is_solid) {
@@ -60,9 +62,10 @@ std::pair<double, double> ObstacleForces::computeForces(const Vector& p,
                 const double u_W = u[uIdx(i, j)];
                 const double u_E = u[uIdx(i + 1, j)];
                 const double u_avg = 0.5 * (u_W + u_E);
+                // mu*du/dy on a y-normal face acts along x -> DRAG
                 const double dist = pMesh_.obstacle_ymin - pMesh_.y[j];
                 const double du_dn = (0.0 - u_avg) / dist;
-                Fy += -rho_ * nu_ * du_dn * area;
+                Fx += -rho_ * nu_ * du_dn * area;
             }
             // South face of fluid cell (i,j) touches the obstacle's north face.
             if (j > 1 && pMesh_.cells[pIdx(i, j - 1)].is_solid) {
@@ -75,7 +78,7 @@ std::pair<double, double> ObstacleForces::computeForces(const Vector& p,
                 const double u_avg = 0.5 * (u_W + u_E);
                 const double dist = pMesh_.y[j] - pMesh_.obstacle_ymax;
                 const double du_dn = (u_avg - 0.0) / dist;
-                Fy += rho_ * nu_ * du_dn * area;
+                Fx += rho_ * nu_ * du_dn * area;       // shear along x -> drag
             }
         }
     }
