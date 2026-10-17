@@ -1,0 +1,8 @@
+# =============================================================================
+# Condiciones de Contorno — Lid-Driven Cavity (LDC)
+# Formato: BOCO_NAME  CARA  IDX_START  IDX_END  TIPO              VALOR
+# =============================================================================
+lid           NORTH   0       9999     WALL_FIXED_VALUE   1.0
+wall_south    SOUTH   0       9999     WALL               0.0
+wall_west     WEST    0       9999     WALL               0.0
+wall_east     EAST    0       9999     WALL               0.0
