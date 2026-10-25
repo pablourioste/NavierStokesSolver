@@ -17,27 +17,27 @@ Vector DivergenceOperator::apply(const Vector& u, const Vector& v) const
         // surrounding no-penetration-fixed U/V nodes.
         if (pMesh_.cells[k].is_solid) { div[k] = 0.0; continue; }
 
-        const int i = pMesh_.id_to_i[k];   // índice lógico 1-based
+        const int i = pMesh_.id_to_i[k];   // 1-based logical index
         const int j = pMesh_.id_to_j[k];
 
-        // Velocidades en las cuatro caras de la celda P (i,j)
-        //   Cara Este  ↔ nodo U (k_u = i+1, j)
-        //   Cara Oeste ↔ nodo U (k_u = i,   j)
-        //   Cara Norte ↔ nodo V (i,   l_v = j+1)
-        //   Cara Sur   ↔ nodo V (i,   l_v = j  )
+        // Velocities on the four faces of P cell (i,j)
+        //   East face  ↔ U node (k_u = i+1, j)
+        //   West face  ↔ U node (k_u = i,   j)
+        //   North face ↔ V node (i,   l_v = j+1)
+        //   South face ↔ V node (i,   l_v = j  )
         const double u_E = u[ uIdx(i + 1, j    ) ];
         const double u_W = u[ uIdx(i,     j    ) ];
         const double v_N = v[ vIdx(i,     j + 1) ];
         const double v_S = v[ vIdx(i,     j    ) ];
 
-        // Integral FVM del flujo neto
+        // FVM integral of the net flux
         const double flux =
               u_E * pMesh_.Se[i][j]
             - u_W * pMesh_.Sw[i][j]
             + v_N * pMesh_.Sn[i][j]
             - v_S * pMesh_.Ss[i][j];
 
-        // Dividir por volumen → divergencia por unidad de volumen
+        // Divide by volume → divergence per unit volume
         div[k] = flux / pMesh_.V[i][j];
     }
     return div;

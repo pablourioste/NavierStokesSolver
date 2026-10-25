@@ -56,13 +56,17 @@ Lid-Driven Cavity (Ghia et al. 1982), the Differentially Heated Cavity
 │   ├── scenario.txt             selects the active scenario
 │   ├── lid_driven_cavity/        per-scenario config (geometry, BCs, params)
 │   ├── differentially_heated_cavity/
-│   └── square_cylinder/
+│   ├── square_cylinder/
+│   └── square_cylinder_breuer/  Breuer et al. (2000) validation set-up
 ├── output/                 # Simulation results, per scenario and case (see "Output layout")
 ├── plotters/               # Python post-processing; nsplot.py = shared style + I/O
+├── tools/                  # run_case.sh, run_pending_cases.sh, status.sh (see "Running individual cases")
 ├── docs/
 │   ├── theory/                  equations, mesh, solver — how it works
 │   ├── scenarios/               one page per physical problem — how to run it
-│   └── figures/                 curated result figures shown in this README
+│   ├── figures/                 curated result figures shown in this README
+│   ├── ALGORITHM.md             function-by-function walkthrough + call graph
+│   └── OPERATORS_REPORT.md      discrete operators and their MMS verification
 ├── CMakeLists.txt
 └── run.sh                  # configure + build + run helper
 ```
@@ -99,7 +103,7 @@ bash run.sh              # configure, build, and run the main solver
 bash run.sh build        # configure + build only (all 3 executables)
 bash run.sh mesh_gen     # main solver: scenario picked by input/scenario.txt
 bash run.sh verify       # operator_verify: MMS convergence check for the operators
-bash run.sh sweep        # reynolds_sweep: batch sweep over the active scenario's reynolds_cases.txt
+bash run.sh sweep        # reynolds_sweep: same driver as mesh_gen (sweeps reynolds_cases.txt / rayleigh_cases.txt)
 ```
 
 Or manually:
@@ -366,9 +370,10 @@ everything else lives in that scenario's own subfolder,
 - [docs/scenarios/differentially_heated_cavity.md](docs/scenarios/differentially_heated_cavity.md) (+ [full implementation deep-dive](docs/scenarios/differentially_heated_cavity_EN.md))
 - [docs/scenarios/square_cylinder.md](docs/scenarios/square_cylinder.md) — validated against Breuer et al. (2000) (+ [references, fixes and validation results](docs/scenarios/square_cylinder_validation.md))
 
-**Legacy** (Spanish, detailed derivations from early development):
-[docs/ALGORITMO.md](docs/ALGORITMO.md), [docs/OPERATORS_REPORT.md](docs/OPERATORS_REPORT.md),
-[docs/differentially_heated_cavity.md](docs/differentially_heated_cavity.md).
+**Detailed references:**
+- [docs/ALGORITHM.md](docs/ALGORITHM.md) — function-by-function walkthrough of the core algorithm and call graph (lid-driven cavity)
+- [docs/OPERATORS_REPORT.md](docs/OPERATORS_REPORT.md) — every discrete operator, its stencil, and the 10 MMS verification suites
+- [docs/Lid_driven_structured.cpp](docs/Lid_driven_structured.cpp) — legacy single-file reference prototype (not built)
 
 ## Validation summary
 
@@ -383,6 +388,7 @@ everything else lives in that scenario's own subfolder,
 
 - CLI arguments / a config file selector, instead of hand-editing `input/*.txt` between runs.
 - Second-order-accurate Laplacian stencil on stretched meshes (currently 1st-order — see [docs/theory/mesh.md](docs/theory/mesh.md)).
+- Turbulence modelling: an eddy-viscosity RANS/URANS model (Spalart–Allmaras or $k$–$\omega$ SST); LES would need a 3D extension — see [docs/theory/solver.md §8](docs/theory/solver.md#8-possible-extension-turbulence-modelling-rans--les).
 - Square Cylinder: real slip side walls for the unconfined Sohankar et al. (1998) benchmark, an incremental pressure-correction scheme, and a stronger preconditioner for the pressure solver — see [docs/scenarios/square_cylinder_validation.md](docs/scenarios/square_cylinder_validation.md).
 
 ## License

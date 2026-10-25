@@ -43,7 +43,7 @@ $$
 
 where `θ` is the non-dimensional temperature. This appears directly in the code:
 
-- In [main.cpp:196](../../src/main.cpp#L196): `const double nu = energy_on ? Pr : ...`
+- In [main.cpp:305-306](../../src/main.cpp#L305-L306): `if (energy_on) nu = Pr;`
 - In [Buoyancy.hpp:34](../../src/Buoyancy.hpp#L34): `const double coeff = dt * Ra * Pr;`
 
 ### 1.3 Energy (temperature advection–diffusion)
@@ -54,7 +54,7 @@ $$
 $$
 
 With thermal diffusivity `α = 1` in the Ra–Pr scaling
-([main.cpp:221](../../src/main.cpp#L221), `alpha=1.0` is passed to `EnergySolver`).
+([main.cpp:337](../../src/main.cpp#L337), `alpha=1.0` is passed to `EnergySolver`).
 The equation is stated literally in the header of
 [EnergySolver.hpp:14](../../src/EnergySolver.hpp#L14):
 
@@ -74,8 +74,12 @@ d(theta)/dt + (u . grad) theta = alpha * laplacian(theta)
 
 ## 2. Problem selection: how the DHC is activated
 
-The switch between **Lid-Driven Cavity** and **Differentially Heated Cavity** is
-a single integer in [input/differentially_heated_cavity/sim_params.txt](../../input/differentially_heated_cavity/sim_params.txt):
+The active scenario is chosen in [input/scenario.txt](../../input/scenario.txt)
+(`scenario = differentially_heated_cavity`), which makes `main()` read every other
+file from `input/differentially_heated_cavity/`. The energy equation is then
+enabled by the integer flag in
+[input/differentially_heated_cavity/sim_params.txt](../../input/differentially_heated_cavity/sim_params.txt);
+both conditions must hold:
 
 ```text
 solve_energy = 1     # 0 -> Lid cavity (momentum + pressure)
@@ -85,30 +89,31 @@ Pr = 0.71            # Prandtl number (used only if solve_energy = 1)
 
 Flag flow:
 
-1. [`MeshConfig::get_sim_params`](../../src/mesh/MeshGenerator.cpp#L686) reads the
+1. [`MeshConfig::get_sim_params`](../../src/mesh/MeshGenerator.cpp#L764) reads the
    file and `update_parameter` assigns `solve_energy` and `Pr` to the class
-   members ([MeshGenerator.cpp:732](../../src/mesh/MeshGenerator.cpp#L732)).
-2. In [main.cpp:129](../../src/main.cpp#L129):
-   `const bool energy_on = (myConfig.solve_energy != 0);`
+   members ([MeshGenerator.cpp:813-815](../../src/mesh/MeshGenerator.cpp#L813-L815)).
+2. In [main.cpp:222-223](../../src/main.cpp#L222-L223):
+   `const bool energy_on = (scenario == Scenario::DIFFERENTIALLY_HEATED_CAVITY) && (myConfig.solve_energy != 0);`
+   (the scenario itself comes from `input/scenario.txt`).
 3. If `energy_on`:
    - The Rayleigh numbers to sweep are read from `rayleigh_cases.txt`
-     ([main.cpp:135](../../src/main.cpp#L135)).
+     ([main.cpp:230](../../src/main.cpp#L230)).
    - **Temperature** boundary conditions are loaded from `boundaries_T.txt`
-     ([main.cpp:136](../../src/main.cpp#L136)).
+     ([main.cpp:231](../../src/main.cpp#L231)).
    - The case loop iterates over **Rayleigh** instead of Reynolds.
 
 ---
 
 ## 3. The input files and what each controls
 
-Everything in `input/`. `main()` reads them at startup in this order
-([main.cpp:82-93](../../src/main.cpp#L82-L93)):
+Everything in `input/differentially_heated_cavity/`. `main()` reads them at startup in this order
+([main.cpp:149-157](../../src/main.cpp#L149-L157)):
 
 | File | Read by | Controls |
 |------|---------|----------|
 | [data.txt](../../input/differentially_heated_cavity/data.txt) | `get_data` | Geometry: `L_domain`, `H_domain`, depth `W_depth`, and the NW/NE/SW/SE nodes that split the domain into zones |
 | [stretch.txt](../../input/differentially_heated_cavity/stretch.txt) | `get_stretch` | Cell count per zone and the **stretching β** (refinement) |
-| [sim_params.txt](../../input/differentially_heated_cavity/sim_params.txt) | `get_sim_params` | `dt`, `rho`, `U_lid`, `nu`, `max_steps`, `ss_tol`, **`solve_energy`**, **`Pr`** |
+| [sim_params.txt](../../input/differentially_heated_cavity/sim_params.txt) | `get_sim_params` | `dt`, `rho`, `U_lid`, `max_steps`, `ss_tol`, **`solve_energy`**, **`Pr`** (a `nu` line is ignored: `nu = Pr` in this scenario) |
 | [boundaries.txt](../../input/differentially_heated_cavity/boundaries.txt) | `define_boundaries` | **Velocity** boundary conditions |
 | [boundaries_T.txt](../../input/differentially_heated_cavity/boundaries_T.txt) | `define_temperature_boundaries` | **Temperature** boundary conditions (DHC only) |
 | [rayleigh_cases.txt](../../input/differentially_heated_cavity/rayleigh_cases.txt) | `read_rayleigh_cases` | List of Rayleigh numbers to sweep |
@@ -165,7 +170,7 @@ temperature gradient generates the buoyancy that drives the fluid.
 ### 4.1 Staggered grid (MAC)
 
 **Three meshes** are generated from the pressure mesh
-([main.cpp:86-88](../../src/main.cpp#L86-L88)):
+([main.cpp:153-155](../../src/main.cpp#L153-L155)):
 
 ```
 pMesh = generate_mesh();           // pressure and temperature θ (cell center)
@@ -226,7 +231,7 @@ its fluxes and Laplacian (see §6).
 
 - [`build_connectivity`](../../src/mesh/MeshGenerator.cpp#L448) builds the neighbor
   table (E/W/N/S) and flags which cells touch a boundary.
-- [`define_temperature_boundaries`](../../src/mesh/MeshGenerator.cpp#L993) creates
+- [`define_temperature_boundaries`](../../src/mesh/MeshGenerator.cpp#L1086) creates
   the parallel `bound_*_T` lists (west/east/north/south). It **copies the
   geometry** from the velocity lists `bound_*` and then overwrites only the
   `type` and `value` with what `boundaries_T.txt` says. Faces not mentioned
@@ -236,7 +241,7 @@ its fluxes and Laplacian (see §6).
 
 ## 5. The time loop: how the solver is fed step by step
 
-The heart is in [main.cpp:225-258](../../src/main.cpp#L225-L258). Each `caseVal` of
+The heart is in [main.cpp:299-652](../../src/main.cpp#L299-L652). Each `caseVal` of
 the sweep is a Rayleigh number; inside, the time loop is:
 
 ```cpp
@@ -280,9 +285,9 @@ DHC couples in via external injection.
 
 ### 5.1 Initial condition
 
-- `u_star, v_star, p_sol = 0` ([main.cpp:211-213](../../src/main.cpp#L211-L213)).
+- `u_star, v_star, p_sol = 0` ([main.cpp:327-329](../../src/main.cpp#L327-L329)).
 - `T = 0.5` in all cells (mid-value between the hot wall θ=1 and the cold θ=0)
-  ([main.cpp:223](../../src/main.cpp#L223)).
+  ([main.cpp:339](../../src/main.cpp#L339)).
 
 ---
 
@@ -313,7 +318,7 @@ const double v_s = v[vIdx(i, j  )];  // south face
 Fluxes use first-order **UPWIND** by default (recommended for high-Rayleigh
 stability) or **CDS** (central differences). With UPWIND, the value at each face
 is taken from the *upstream* cell
-([EnergySolver.cpp:100-106](../../src/EnergySolver.cpp#L100-L106)):
+([EnergySolver.cpp:101-105](../../src/EnergySolver.cpp#L101-L105)):
 
 ```cpp
 Fe = u_e * ((u_e >= 0.0) ? T_P : T_E) * Se;   // and similarly Fw, Fn, Fs
@@ -357,12 +362,12 @@ contaminate its neighbors within the step), and then:
 > same deferred buffer. The `EnergySolver` was deliberately designed as a mirror
 > of the `MomentumSolver` for the scalar `θ`. Compare
 > [EnergySolver.cpp:128-134](../../src/EnergySolver.cpp#L128-L134) with
-> [MomentumSolver.cpp:289-300](../../src/MomentumSolver.cpp#L289-L300).
+> [MomentumSolver.cpp:380-390](../../src/MomentumSolver.cpp#L380-L390).
 >
 > **Pressure is a different case**: it is not an evolution equation (no
 > `∂p/∂t`), but an **elliptic constraint**. At each step the Poisson equation
 > `∇²p = (ρ/dt)·∇·u*` is solved with Conjugate Gradient
-> ([main.cpp:236](../../src/main.cpp#L236)) to enforce `∇·u = 0`. That is why it has
+> ([main.cpp:385-386](../../src/main.cpp#L385-L386)) to enforce `∇·u = 0`. That is why it has
 > **no AB2 weights and no `rhs_old`**: it is an implicit *solve* yielding the
 > instantaneous pressure, not a time march.
 >
@@ -403,7 +408,7 @@ Important details:
 ## 8. Validation and output
 
 When `energy_on`, at the end of each case
-([main.cpp:406-461](../../src/main.cpp#L406-L461)) the **de Vahl Davis (1983)**
+([main.cpp:597-651](../../src/main.cpp#L597-L651)) the **de Vahl Davis (1983)**
 benchmark metrics are computed:
 
 - `u_max` on the vertical mid-plane (`x = L/2`).
@@ -422,7 +427,7 @@ Nu_avg /= H_domain;
 Outputs per case (in `output/differentially_heated_cavity/Ra_<value>/`):
 
 - `fields/{temperature,u_velocity,v_velocity,pressure}.vtk` (fields in
-  rectilinear VTK format, [main.cpp:266-270](../../src/main.cpp#L266-L270)).
+  rectilinear VTK format, [main.cpp:440-444](../../src/main.cpp#L440-L444)).
 - `data/dhc_metrics.csv` with `Ra, Pr, u_max, v_max, Nu_avg`.
 
 ---

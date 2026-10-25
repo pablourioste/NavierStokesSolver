@@ -5,10 +5,10 @@
    "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch", // Puedes ponerle el nombre que quieras
+            "name": "(gdb) Launch mesh_gen",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/mi_program", // ¡IMPORTANTE! Asegúrate que coincida con tu ejecutable
+            "program": "${workspaceFolder}/build/mesh_gen", // Built by CMake (see CMakeLists.txt); run from the repo root
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -7,9 +7,9 @@ LaplaceOperator::LaplaceOperator(const GridData& pMesh)
 // ---------------------------------------------------------------------------
 // assembleToTriplets
 //
-// FVM Laplaciano sobre malla P.
-// Convención positivo-definida: diagonal = +(a_E+a_W+a_N+a_S),
-// fuera-de-diagonal = −a_nb.
+// FVM Laplacian on the P mesh.
+// Positive-definite convention: diagonal = +(a_E+a_W+a_N+a_S),
+// off-diagonal = −a_nb.
 // ---------------------------------------------------------------------------
 std::vector<Triplet> LaplaceOperator::assembleToTriplets() const
 {

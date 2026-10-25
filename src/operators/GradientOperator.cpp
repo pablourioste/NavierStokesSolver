@@ -16,9 +16,9 @@ void GradientOperator::apply(const Vector& p,
     grad_u.assign(uMesh_.num_active_nodes, 0.0);
     grad_v.assign(vMesh_.num_active_nodes, 0.0);
 
-    // ---- ∂p/∂x en nodos U interiores (k=2..N, j=1..M) ----
-    // El nodo U (k,j) se encuentra entre las celdas P (k-1,j) y (k,j).
-    // La distancia entre centros es pMesh_.x[k] - pMesh_.x[k-1].
+    // ---- ∂p/∂x at interior U nodes (k=2..N, j=1..M) ----
+    // U node (k,j) lies between P cells (k-1,j) and (k,j).
+    // The distance between their centres is pMesh_.x[k] - pMesh_.x[k-1].
     for (int j = 1; j <= M; ++j) {
         for (int k = 2; k <= N; ++k) {
             const double P_east = p[ pIdx(k,     j) ];
@@ -28,8 +28,8 @@ void GradientOperator::apply(const Vector& p,
         }
     }
 
-    // ---- ∂p/∂y en nodos V interiores (i=1..N, l=2..M) ----
-    // El nodo V (i,l) se encuentra entre las celdas P (i,l-1) y (i,l).
+    // ---- ∂p/∂y at interior V nodes (i=1..N, l=2..M) ----
+    // V node (i,l) lies between P cells (i,l-1) and (i,l).
     for (int l = 2; l <= M; ++l) {
         for (int i = 1; i <= N; ++i) {
             const double P_north = p[ pIdx(i, l    ) ];

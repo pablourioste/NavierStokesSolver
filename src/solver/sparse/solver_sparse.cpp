@@ -178,7 +178,7 @@ Vector subtract(const Vector& a, const Vector& b) {
     return res;
 }
 
-Vector adittion(const Vector& a, const Vector& b) {
+Vector addition(const Vector& a, const Vector& b) {
     Vector res(a.size());
     for (size_t i = 0; i < a.size(); i++) {
         res[i] = a[i] + b[i];

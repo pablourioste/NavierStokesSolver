@@ -15,9 +15,9 @@ DiffusionOperator::DiffusionOperator(const GridData& pMesh,
 {}
 
 // ---------------------------------------------------------------------------
-// diffuseU — ν∇²u en el nodo U interior (k,j), k=2..N, j=1..M
+// diffuseU — ν∇²u at the interior U node (k,j), k=2..N, j=1..M
 //
-// Código extraído de MomentumSolver::uRHS() — solo la parte difusiva.
+// Code extracted from MomentumSolver::uRHS() — diffusive part only.
 // ---------------------------------------------------------------------------
 double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
 {
@@ -27,8 +27,8 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
     const double y_P = uMesh_.cells[uIdx(k, j)].y;
     const double u_P0 = u[uIdx(k, j)];
 
-    // Vecinos en x (k=2..N garantiza k-1>=1 y k+1<=N+1 dentro del dominio
-    // global, pero el vecino U puede caer dentro de un obstáculo inmerso).
+    // Neighbours in x (k=2..N guarantees k-1>=1 and k+1<=N+1 inside the global
+    // domain, but the neighbouring U node may fall inside an immersed obstacle).
     const bool west_blocked_x = uNodeBlocked(pMesh_, k - 1, j);
     const bool east_blocked_x = uNodeBlocked(pMesh_, k + 1, j);
 
@@ -50,11 +50,11 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
         dx_e = 2.0 * (pMesh_.obstacle_xmin - x_P);   // solid to the east: wall = obstacle WEST face
     }
 
-    // Vecinos en y — celdas fantasma en las paredes N/S, o en la superficie
-    // de un obstáculo inmerso si el nodo U vecino (k,j-1)/(k,j+1) cae dentro
-    // del bloque sólido (uNodeBlocked). El propio nodo (k,j), si está EN la
-    // superficie (uNodeOnObstacleSurface), ya fue fijado a 0 por
-    // applyBoundaryConditions antes de llamar aquí — no necesita caso especial.
+    // Neighbours in y — ghost cells at the N/S walls, or at the surface of an
+    // immersed obstacle if the neighbouring U node (k,j-1)/(k,j+1) falls inside
+    // the solid block (uNodeBlocked). If node (k,j) itself lies ON the surface
+    // (uNodeOnObstacleSurface), it was already set to 0 by
+    // applyBoundaryConditions before this call — no special case needed.
     const bool south_blocked = (j > 1) && uNodeBlocked(pMesh_, k, j - 1);
     const bool north_blocked = (j < M) && uNodeBlocked(pMesh_, k, j + 1);
 
@@ -63,12 +63,12 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
         u_S  = u[uIdx(k, j - 1)];
         dy_s = y_P - uMesh_.cells[uIdx(k, j - 1)].y;
     } else if (south_blocked) {
-        // No-slip en la superficie del obstáculo: ghost = -u_P (u_wall = 0),
-        // distancia a la cara sur del obstáculo (coordenada exacta, snapped).
+        // No-slip on the obstacle surface: ghost = -u_P (u_wall = 0),
+        // distance to the obstacle's top face (exact, snapped coordinate).
         u_S  = -u_P0;
         dy_s = 2.0 * (y_P - pMesh_.obstacle_ymax);   // solid to the south: wall = obstacle TOP face
     } else {
-        // Pared Sur: método imagen → ghost = 2·u_wall − u_P
+        // South wall: image method → ghost = 2·u_wall − u_P
         u_S  = 2.0 * u_ghost_south_ - u_P0;
         dy_s = 2.0 * (y_P - uMesh_.yvc[0]);
     }
@@ -81,7 +81,7 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
         u_N  = -u_P0;
         dy_n = 2.0 * (pMesh_.obstacle_ymin - y_P);   // solid to the north: wall = obstacle BOTTOM face
     } else {
-        // Pared Norte: método imagen → ghost = 2·u_wall − u_P
+        // North wall: image method → ghost = 2·u_wall − u_P
         u_N  = 2.0 * u_ghost_north_ - u_P0;
         dy_n = 2.0 * (uMesh_.yvc[M] - y_P);
     }
@@ -95,9 +95,9 @@ double DiffusionOperator::diffuseU(const Vector& u, int k, int j) const
 }
 
 // ---------------------------------------------------------------------------
-// diffuseV — ν∇²v en el nodo V interior (i,l), i=1..N, l=2..M
+// diffuseV — ν∇²v at the interior V node (i,l), i=1..N, l=2..M
 //
-// Código extraído de MomentumSolver::vRHS() — solo la parte difusiva.
+// Code extracted from MomentumSolver::vRHS() — diffusive part only.
 // ---------------------------------------------------------------------------
 double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
 {
@@ -107,8 +107,8 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
     const double y_P = vMesh_.cells[vIdx(i, l)].y;
     const double v_P0 = v[vIdx(i, l)];
 
-    // Vecinos en y (l=2..M garantiza l-1>=1 y l+1<=M+1 dentro del dominio
-    // global, pero el vecino V puede caer dentro de un obstáculo inmerso).
+    // Neighbours in y (l=2..M guarantees l-1>=1 and l+1<=M+1 inside the global
+    // domain, but the neighbouring V node may fall inside an immersed obstacle).
     const bool south_blocked_y = vNodeBlocked(pMesh_, i, l - 1);
     const bool north_blocked_y = vNodeBlocked(pMesh_, i, l + 1);
 
@@ -130,8 +130,8 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
         dy_n = 2.0 * (pMesh_.obstacle_ymin - y_P);   // solid to the north: wall = obstacle BOTTOM face
     }
 
-    // Vecinos en x — celdas fantasma en las paredes O/E, o en la superficie
-    // de un obstáculo inmerso si el nodo V vecino cae dentro del bloque sólido.
+    // Neighbours in x — ghost cells at the W/E walls, or at the surface of an
+    // immersed obstacle if the neighbouring V node falls inside the solid block.
     const bool west_blocked = (i > 1) && vNodeBlocked(pMesh_, i - 1, l);
     const bool east_blocked = (i < N) && vNodeBlocked(pMesh_, i + 1, l);
 
@@ -143,7 +143,7 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
         v_W  = -v_P0;
         dx_w = 2.0 * (x_P - pMesh_.obstacle_xmax);   // solid to the west: wall = obstacle EAST face
     } else {
-        // Pared Oeste: método imagen → ghost = 2·v_wall − v_P
+        // West wall: image method → ghost = 2·v_wall − v_P
         v_W  = 2.0 * v_ghost_west_ - v_P0;
         dx_w = 2.0 * (x_P - vMesh_.xvc[0]);
     }
@@ -156,7 +156,7 @@ double DiffusionOperator::diffuseV(const Vector& v, int i, int l) const
         v_E  = -v_P0;
         dx_e = 2.0 * (pMesh_.obstacle_xmin - x_P);   // solid to the east: wall = obstacle WEST face
     } else {
-        // Pared Este: método imagen → ghost = 2·v_wall − v_P
+        // East wall: image method → ghost = 2·v_wall − v_P
         v_E  = 2.0 * v_ghost_east_ - v_P0;
         dx_e = 2.0 * (vMesh_.xvc[N] - x_P);
     }

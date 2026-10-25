@@ -5,21 +5,21 @@
 // =============================================================================
 // GradientOperator
 //
-// Discretiza el gradiente de presión  ∇p  de la malla P a las mallas U/V,
-// usando diferencias finitas centradas de 2.º orden sobre la malla escalonada.
+// Discretises the pressure gradient  ∇p  from the P mesh onto the U/V meshes,
+// using 2nd-order central finite differences on the staggered grid.
 //
-// Para un nodo U interior (k=2..N, j=1..M):
+// For an interior U node (k=2..N, j=1..M):
 //   (∂p/∂x)|_{k,j} = (p[pIdx(k,j)] − p[pIdx(k-1,j)]) / (x_P[k] − x_P[k-1])
-//   donde x_P[k] es el centro de la celda P con índice lógico k.
+//   where x_P[k] is the centre of the P cell with logical index k.
 //
-// Para un nodo V interior (i=1..N, l=2..M):
+// For an interior V node (i=1..N, l=2..M):
 //   (∂p/∂y)|_{i,l} = (p[pIdx(i,l)] − p[pIdx(i,l-1)]) / (y_P[l] − y_P[l-1])
 //
-// IMPORTANTE: este operador es puramente geométrico, sin factores dt/ρ.
-// La corrección de velocidad en PressurePoissonSystem::projectVelocity()
-// aplica adicionalmente el factor −(dt/ρ).
+// IMPORTANT: this operator is purely geometric, with no dt/ρ factors.
+// The velocity correction in PressurePoissonSystem::projectVelocity()
+// applies the additional −(dt/ρ) factor.
 //
-// Los nodos de frontera (k=1, k=N+1, l=1, l=M+1) se ponen a 0.0 en la salida.
+// Boundary nodes (k=1, k=N+1, l=1, l=M+1) are set to 0.0 in the output.
 // =============================================================================
 class GradientOperator {
 public:
@@ -27,10 +27,10 @@ public:
                      const GridData& uMesh,
                      const GridData& vMesh);
 
-    // Calcula el gradiente discreto de p.
-    // Entrada:   p      — campo de presión en nodos P, tamaño pMesh.num_active_nodes
-    // Salidas:   grad_u — ∂p/∂x en nodos U interiores, tamaño uMesh.num_active_nodes
-    //            grad_v — ∂p/∂y en nodos V interiores, tamaño vMesh.num_active_nodes
+    // Computes the discrete gradient of p.
+    // Input:    p      — pressure field at P nodes, size pMesh.num_active_nodes
+    // Outputs:  grad_u — ∂p/∂x at interior U nodes, size uMesh.num_active_nodes
+    //           grad_v — ∂p/∂y at interior V nodes, size vMesh.num_active_nodes
     void apply(const Vector& p, Vector& grad_u, Vector& grad_v) const;
 
 private:

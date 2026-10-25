@@ -1,12 +1,12 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <sstream> // (La necesitamos para 'stod' y 'stoi' en update_parameter, pero no para leer)
-#include <algorithm> // Para 'remove' y 'find_if'
-#include <cctype>    // Para 'isspace'
+#include <sstream>   // stringstream, used to parse "key = value" lines
+#include <algorithm> // For 'remove' and 'find_if'
+#include <cctype>    // For 'isspace'
 #include <vector>
-#include <cmath>    // Para funciones matemáticas como sinh, abs
-#include <iomanip> // Para formateo bonito
+#include <cmath>     // For math functions such as sinh, abs
+#include <iomanip>   // For formatted console output
 
 #include "Mesh_config.h"
 using namespace std;
@@ -25,7 +25,7 @@ string bc_type_to_string(BCType t) {
 
 MeshConfig::MeshConfig() 
     : 
-    // 1. Inicializamos Dimensiones
+    // 1. Initialise dimensions
     L_domain(3.0),
     H_domain(3.0),
     W_depth(0.1),
@@ -38,7 +38,7 @@ MeshConfig::MeshConfig()
     solve_energy(0),
     Pr(0.71),
 
-    // 2. Inicializamos Posiciones (std::pair)
+    // 2. Initialise positions (std::pair)
     // NW = North-West: min x, max y | NE = North-East: max x, max y
     // SW = South-West: min x, min y | SE = South-East: max x, min y
     node_NW(1.5, 2.0),
@@ -46,7 +46,7 @@ MeshConfig::MeshConfig()
     node_NE(2.0, 2.0),
     node_SW(1.5, 1.5),
 
-    // 3. Inicializamos Stretching
+    // 3. Initialise stretching
     beta_x_west(2.0),
     beta_x_east(-2.0),
     beta_y_north(-2.0),
@@ -54,7 +54,7 @@ MeshConfig::MeshConfig()
     beta_x_center(0.0),
     beta_y_center(0.0),
 
-    // 4. Inicializamos Número de Celdas
+    // 4. Initialise number of cells
     N_cells_east(50),
     M_cells_east(50),
     N_cells_west(50),
@@ -62,11 +62,11 @@ MeshConfig::MeshConfig()
     N_cells_center(50),
     M_cells_center(50)
     {
-    // El cuerpo queda vacío porque solo estamos inicializando valores
+    // The body only reports creation: all values are set in the initialiser list
     cout << "MeshConfig object created with default parameters." << endl;
 }
 // ==========================================
-// FIN DEL CONSTRUCTOR
+// END OF CONSTRUCTOR
 // ==========================================
 /**
  * @brief Generates 1D face coordinates with stretching at an arbitrary 'focus_point'.
@@ -260,20 +260,20 @@ GridData MeshConfig::generate_mesh() const {
         }
     }
 
-    // --- 1. GENERAR FRONTERAS (SUPERFICIES) ---
-    cout << "Generando Fronteras..." << endl;
+    // --- 1. GENERATE BOUNDARIES (SURFACES) ---
+    cout << "Generating boundaries..." << endl;
 
-    // Frontera Oeste (cara i=0)
+    // West boundary (face i=0)
     for (int j = 1; j <= M_cells; ++j) {
         BoundaryFace face;
         face.x = data.xvc[0]; 
         face.y = (data.yvc[j] + data.yvc[j-1]) / 2.0; 
         face.Area = (data.yvc[j] - data.yvc[j-1]) * W_depth;
-        // Conecta con la primera columna interna (el ID se gestiona luego)
+        // Connects to the first internal column (the ID is handled later)
         data.bound_west.push_back(face);
     }
 
-    // Frontera Este (cara i=N_cells)
+    // East boundary (face i=N_cells)
     for (int j = 1; j <= M_cells; ++j) {
         BoundaryFace face;
         face.x = data.xvc[N_cells]; 
@@ -282,7 +282,7 @@ GridData MeshConfig::generate_mesh() const {
         data.bound_east.push_back(face);
     }
 
-    // Frontera Sur (cara j=0)
+    // South boundary (face j=0)
     for (int i = 1; i <= N_cells; ++i) {
         BoundaryFace face;
         face.x = (data.xvc[i] + data.xvc[i-1]) / 2.0;
@@ -291,7 +291,7 @@ GridData MeshConfig::generate_mesh() const {
         data.bound_south.push_back(face);
     }
 
-    // Frontera Norte (cara j=M_cells)
+    // North boundary (face j=M_cells)
     for (int i = 1; i <= N_cells; ++i) {
         BoundaryFace face;
         face.x = (data.xvc[i] + data.xvc[i-1]) / 2.0;
@@ -300,28 +300,28 @@ GridData MeshConfig::generate_mesh() const {
         data.bound_north.push_back(face);
     }
 
-    // --- 2. GENERAR ELEMENTOS INTERNOS (VOLÚMENES) ---
-    cout << "Generando Elementos de Volumen Internos..." << endl;
+    // --- 2. GENERATE INTERNAL ELEMENTS (VOLUMES) ---
+    cout << "Generating internal volume elements..." << endl;
     
     int current_id = 0;
     
-    // Nota: Iteramos SOLO sobre las celdas de fluido internas
+    // Note: iterate ONLY over the internal fluid cells
     for (int j = 1; j <= M_cells; ++j) {
         for (int i = 1; i <= N_cells; ++i) {
             InternalCell cell;
             
             cell.global_id = current_id++; // 0, 1, 2...
             
-            // Centroides
+            // Centroids
             cell.x = (data.xvc[i] + data.xvc[i-1]) / 2.0;
             cell.y = (data.yvc[j] + data.yvc[j-1]) / 2.0;
             
-            // Propiedades geométricas
+            // Geometric properties
             double dx = data.xvc[i] - data.xvc[i-1];
             double dy = data.yvc[j] - data.yvc[j-1];
             cell.Vol = dx * dy * W_depth;
             
-            // Agregamos a la lista
+            // Add to the list
             data.cells.push_back(cell);
         }
     }
@@ -333,52 +333,52 @@ GridData MeshConfig::generate_mesh() const {
 GridData MeshConfig::generate_u_mesh(const GridData& pMesh) const {
     GridData uMesh;
 
-    // 1. Configuración Básica
-    // La malla U tiene la misma Y que P, pero diferente X
+    // 1. Basic configuration
+    // The U mesh has the same Y as P, but a different X
     uMesh.M_cells_y = pMesh.M_cells_y;
-    uMesh.yvc = pMesh.yvc; // Copiamos las caras Y exactas de P
+    uMesh.yvc = pMesh.yvc; // Copy the exact Y faces of P
 
-    // La malla U tiene N + 1 puntos de velocidad (incluyendo fronteras)
-    // Por tanto, tendrá N + 1 celdas de control en X
+    // The U mesh has N + 1 velocity points (boundaries included),
+    // so it has N + 1 control cells in X
     uMesh.N_cells_x = pMesh.N_cells_x + 1;
 
-    // 2. Generar nuevas coordenadas X (xvc para U)
-    // Los límites de las celdas U son los CENTROS de las celdas P
-    uMesh.xvc.push_back(pMesh.xvc[0]); // Límite izquierdo (pared)
+    // 2. Generate the new X coordinates (xvc for U)
+    // The U cell limits are the CENTRES of the P cells
+    uMesh.xvc.push_back(pMesh.xvc[0]); // Left limit (wall)
 
     for (int i = 1; i <= pMesh.N_cells_x; ++i) {
-        // Promedio entre caras de P para obtener el centro de P
+        // Average of the P faces gives the P centre
         double p_center = (pMesh.xvc[i] + pMesh.xvc[i-1]) / 2.0;
         uMesh.xvc.push_back(p_center);
     }
     
-    uMesh.xvc.push_back(pMesh.xvc[pMesh.N_cells_x]); // Límite derecho (pared)
+    uMesh.xvc.push_back(pMesh.xvc[pMesh.N_cells_x]); // Right limit (wall)
 
-    // 3. Generar Elementos (Celdas) para U
-    // Nota: Esto es crucial para que export_to_VTK funcione
+    // 3. Generate the elements (cells) for U
+    // Note: this is required for export_mesh_to_VTK to work
     int current_id = 0;
     
-    // Iteramos sobre las nuevas dimensiones
-    // j va hasta M (igual que P), i va hasta N+1 (porque hay una U más)
+    // Iterate over the new dimensions
+    // j goes up to M (same as P), i goes up to N+1 (there is one extra U)
     for (int j = 1; j <= uMesh.M_cells_y; ++j) {
         for (int i = 1; i <= uMesh.N_cells_x; ++i) {
             InternalCell cell;
             cell.global_id = current_id++;
 
-            // Límites de la celda U actual
+            // Limits of the current U cell
             double x_left = uMesh.xvc[i-1];
             double x_right = uMesh.xvc[i];
             double y_bottom = uMesh.yvc[j-1];
             double y_top = uMesh.yvc[j];
 
-            // Centroide de la celda U (Donde vive la velocidad u_i,j)
+            // Centroid of the U cell (where the velocity u_i,j lives)
             cell.x = (x_left + x_right) / 2.0;
             cell.y = (y_bottom + y_top) / 2.0;
 
-            // Volumen
+            // Volume
             double dx = x_right - x_left;
             double dy = y_top - y_bottom;
-            cell.Vol = dx * dy * W_depth; // Asumiendo que W_depth es accesible
+            cell.Vol = dx * dy * W_depth;
 
             uMesh.cells.push_back(cell);
         }
@@ -391,26 +391,26 @@ GridData MeshConfig::generate_u_mesh(const GridData& pMesh) const {
 GridData MeshConfig::generate_v_mesh(const GridData& pMesh) const {
     GridData vMesh;
 
-    // 1. Configuración Básica
-    // La malla V tiene la misma X que P, pero diferente Y
+    // 1. Basic configuration
+    // The V mesh has the same X as P, but a different Y
     vMesh.N_cells_x = pMesh.N_cells_x;
-    vMesh.xvc = pMesh.xvc; // Copiamos las caras X exactas de P
+    vMesh.xvc = pMesh.xvc; // Copy the exact X faces of P
 
-    // La malla V tiene M + 1 puntos de velocidad
+    // The V mesh has M + 1 velocity points
     vMesh.M_cells_y = pMesh.M_cells_y + 1;
 
-    // 2. Generar nuevas coordenadas Y (yvc para V)
-    // Los límites de las celdas V son los CENTROS de las celdas P
-    vMesh.yvc.push_back(pMesh.yvc[0]); // Pared Sur
+    // 2. Generate the new Y coordinates (yvc for V)
+    // The V cell limits are the CENTRES of the P cells
+    vMesh.yvc.push_back(pMesh.yvc[0]); // South wall
 
     for (int j = 1; j <= pMesh.M_cells_y; ++j) {
         double p_center = (pMesh.yvc[j] + pMesh.yvc[j-1]) / 2.0;
         vMesh.yvc.push_back(p_center);
     }
 
-    vMesh.yvc.push_back(pMesh.yvc[pMesh.M_cells_y]); // Pared Norte
+    vMesh.yvc.push_back(pMesh.yvc[pMesh.M_cells_y]); // North wall
 
-    // 3. Generar Elementos (Celdas) para V
+    // 3. Generate the elements (cells) for V
     int current_id = 0;
 
     for (int j = 1; j <= vMesh.M_cells_y; ++j) {
@@ -438,7 +438,7 @@ GridData MeshConfig::generate_v_mesh(const GridData& pMesh) const {
     return vMesh;
 }
 
-// Enumeración para facilitar lectura
+// Face directions, for readability
 enum Direction { EAST = 0, WEST = 1, NORTH = 2, SOUTH = 3 };
 
 int MeshConfig::get_global_id(int i, int j, int N_total) {
@@ -451,13 +451,13 @@ void MeshConfig::build_connectivity(GridData& data) const {
     int M = data.M_cells_y;
     int total = N * M;
 
-    // Inicializar los mapas de conectividad e índices inversos
+    // Initialise the connectivity map and the inverse index maps
     data.id_to_i.resize(total);
     data.id_to_j.resize(total);
     data.connectivity.resize(total, std::vector<int>(4, -1));
 
-    // Lambda auxiliar para obtener índice 1D desde 2D (i,j)
-    // Asumiendo orden lexicográfico (bucle j, luego i) como en generate_mesh
+    // Helper lambda giving the 1D index from 2D (i,j)
+    // Lexicographic order (loop over j, then i), as in generate_mesh
     auto get_idx = [&](int i, int j) {
         return (j - 1) * N + (i - 1);
     };
@@ -468,53 +468,53 @@ void MeshConfig::build_connectivity(GridData& data) const {
             int current_idx = get_idx(i, j);
             InternalCell& cell = data.cells[current_idx];
 
-            // Mapas inversos
+            // Inverse maps
             data.id_to_i[current_idx] = i;
             data.id_to_j[current_idx] = j;
 
-            // --- VECINO ESTE ---
+            // --- EAST NEIGHBOUR ---
             if (i < N) {
                 cell.n_east = get_idx(i + 1, j);
                 cell.bc_east = false;
             } else {
-                cell.n_east = -1; // No hay vecino interno
-                cell.bc_east = true; // Toca la Frontera Este
+                cell.n_east = -1; // No internal neighbour
+                cell.bc_east = true; // Touches the East boundary
             }
             data.connectivity[current_idx][EAST] = cell.n_east;
 
-            // --- VECINO OESTE ---
+            // --- WEST NEIGHBOUR ---
             if (i > 1) {
                 cell.n_west = get_idx(i - 1, j);
                 cell.bc_west = false;
             } else {
                 cell.n_west = -1;
-                cell.bc_west = true; // Toca la Frontera Oeste
+                cell.bc_west = true; // Touches the West boundary
             }
             data.connectivity[current_idx][WEST] = cell.n_west;
 
-            // --- VECINO NORTE ---
+            // --- NORTH NEIGHBOUR ---
             if (j < M) {
                 cell.n_north = get_idx(i, j + 1);
                 cell.bc_north = false;
             } else {
                 cell.n_north = -1;
-                cell.bc_north = true; // Toca la Frontera Norte
+                cell.bc_north = true; // Touches the North boundary
             }
             data.connectivity[current_idx][NORTH] = cell.n_north;
 
-            // --- VECINO SUR ---
+            // --- SOUTH NEIGHBOUR ---
             if (j > 1) {
                 cell.n_south = get_idx(i, j - 1);
                 cell.bc_south = false;
             } else {
                 cell.n_south = -1;
-                cell.bc_south = true; // Toca la Frontera Sur
+                cell.bc_south = true; // Touches the South boundary
             }
             data.connectivity[current_idx][SOUTH] = cell.n_south;
         }
     }
 
-    cout << "Conectividad construida. Nodos Internos Activos: " << data.num_active_nodes << endl;
+    cout << "Connectivity built. Active internal nodes: " << data.num_active_nodes << endl;
 }
 
 // ---------------------------------------------------------------------------
@@ -611,8 +611,8 @@ void MeshConfig::export_mesh_to_gnuplot(const GridData& data, const std::string&
         return;
     }
 
-    // --- BLOCK 0: Malla física (Wireframe) ---
-    // Esto dibuja las líneas de las caras. Lo dejamos igual para ver el dominio físico.
+    // --- BLOCK 0: Physical mesh (wireframe) ---
+    // Draws the face lines, showing the physical domain.
     outfile << "# Block 0: Mesh Lines (xvc, yvc faces)\n";
     for (int i = 0; i <= N; ++i) { 
         outfile << data.xvc[i] << " " << data.yvc[0] << "\n";
@@ -625,13 +625,11 @@ void MeshConfig::export_mesh_to_gnuplot(const GridData& data, const std::string&
         outfile << "\n";
     }
 
-    // --- BLOCK 1: Todos los Nodos (Centros + Fronteras) ---
+    // --- BLOCK 1: All nodes (centres + boundaries) ---
     outfile << "\n\n# Block 1: All Nodes (Internal + Ghost)\n";
-    
-    // CORRECCIÓN AQUÍ:
-    // Antes: for (int i = 1; i <= N; ...
-    // Ahora: for (int i = 0; i <= N + 1; ... (Incluye 0 y N+1)
-    
+
+    // Loop over i = 0..N+1 (and j = 0..M+1) so the ghost nodes are included
+
     for (int i = 0; i <= N + 1; ++i) {
         for (int j = 0; j <= M + 1; ++j) {
             outfile << data.x[i] << " " << data.y[j] << "\n";
@@ -705,42 +703,42 @@ void MeshConfig::export_mesh_to_VTK(const GridData& grid, const std::string& fil
 }
 
 /**
- * @brief Lee un archivo de configuración línea por línea y actualiza los parámetros.
+ * @brief Reads a configuration file line by line and updates the parameters.
  */
 void MeshConfig::get_data(const std::string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir el archivo de datos: " << filename << endl;
+        cerr << "Error: could not open data file: " << filename << endl;
         return;
     }
 
     string line, key, value, eq;
     while (getline(file, line)) {
-        // Ignorar comentarios (#) y líneas vacías
+        // Skip comments (#) and empty lines
         if (line.empty() || line[0] == '#') {
             continue;
         }
 
         stringstream ss(line);
-        // Espera el formato "clave = valor"
+        // Expects the format "key = value"
         if (ss >> key >> eq >> value && eq == "=") {
-            // Limpiar espacios de la clave
+            // Strip spaces from the key
             key.erase(remove(key.begin(), key.end(), ' '), key.end());
             update_parameter(key, value);
         }
     }
     file.close();
-    cout << "Archivo de datos '" << filename << "' cargado." << endl;
+    cout << "Data file '" << filename << "' loaded." << endl;
 }
 
 /**
- * @brief Lee un archivo de configuración línea por línea y actualiza los parámetros.
- * (Esta función es idéntica a get_data, pero llama al mismo helper)
+ * @brief Reads the stretching configuration file line by line and updates the parameters.
+ * (Same as get_data; both call the same update_parameter helper)
  */
 void MeshConfig::get_stretch(const std::string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir el archivo de estiramiento: " << filename << endl;
+        cerr << "Error: could not open stretching file: " << filename << endl;
         return;
     }
 
@@ -757,16 +755,16 @@ void MeshConfig::get_stretch(const std::string& filename) {
         }
     }
     file.close();
-    cout << "Archivo de estiramiento '" << filename << "' cargado." << endl;
+    cout << "Stretching file '" << filename << "' loaded." << endl;
 }
 
 /**
- * @brief Lee parámetros físicos/numéricos de la simulación (Re, U_lid, dt, rho, ...).
+ * @brief Reads the physical/numerical simulation parameters (Re, U_lid, dt, rho, ...).
  */
 void MeshConfig::get_sim_params(const std::string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir el archivo de parámetros: " << filename << endl;
+        cerr << "Error: could not open parameter file: " << filename << endl;
         return;
     }
 
@@ -780,17 +778,17 @@ void MeshConfig::get_sim_params(const std::string& filename) {
         }
     }
     file.close();
-    cout << "Parámetros de simulación '" << filename << "' cargados." << endl;
+    cout << "Simulation parameters '" << filename << "' loaded." << endl;
 }
 
 /**
- * @brief Función 'helper' que asigna un valor a un miembro de la clase.
+ * @brief Helper that assigns a value to a class member.
  * std::stod = string to double
  * std::stoi = string to integer
  */
 void MeshConfig::update_parameter(const std::string& key, const std::string& value) {
     
-    // --- Parámetros de "Datos" (leídos por get_data) ---
+    // --- "Data" parameters (read by get_data / get_sim_params) ---
     if (key == "L_domain") {
         L_domain = stod(value);
     } else if (key == "H_domain") {
@@ -816,7 +814,7 @@ void MeshConfig::update_parameter(const std::string& key, const std::string& val
     } else if (key == "Pr") {
         Pr = stod(value);
     }
-    // Para std::pair, es más fácil leerlos como componentes _x y _y
+    // std::pair members are read as separate _x and _y components
     else if (key == "node_NW_x") {
         node_NW.first = stod(value);
     } else if (key == "node_NW_y") {
@@ -835,7 +833,7 @@ void MeshConfig::update_parameter(const std::string& key, const std::string& val
         node_SW.second = stod(value);
     }
 
-    // --- Parámetros de "Estiramiento/Mallado" (leídos por get_stretch) ---
+    // --- "Stretching/meshing" parameters (read by get_stretch) ---
     else if (key == "beta_x_west") {
         beta_x_west = stod(value);
     } else if (key == "beta_x_east") {
@@ -850,7 +848,7 @@ void MeshConfig::update_parameter(const std::string& key, const std::string& val
         beta_y_center = stod(value);
     }
     
-    // --- Cuentas de Celdas ---
+    // --- Cell counts ---
     else if (key == "N_cells_east") {
         N_cells_east = stoi(value);
     } else if (key == "M_cells_east") {
@@ -865,102 +863,102 @@ void MeshConfig::update_parameter(const std::string& key, const std::string& val
         M_cells_center = stoi(value);
     }
     
-    // --- Manejar clave desconocida ---
+    // --- Unknown key ---
     else {
-        cerr << "Advertencia: Clave desconocida en el archivo de configuración: " << key << endl;
+        cerr << "Warning: unknown key in configuration file: " << key << endl;
     }
 }
 
-// Función auxiliar para imprimir líneas separadoras
+// Helper printing a separator line
 void print_line() {
     cout << "-------------------------------------------------------------" << endl;
 }
 
 
-// --- IMPLEMENTACIÓN DEL INSPECTOR ---
+// --- MESH INSPECTOR ---
 void MeshConfig::inspect_mesh(const GridData& mesh) const {
     
-    // 1. IMPRIMIR RESUMEN
-    cout << "\n=== RESUMEN DE LA MALLA ===" << endl;
-    cout << "Dimensiones logicas (Nx x My): " << mesh.N_cells_x << " x " << mesh.M_cells_y << endl;
-    cout << "Total Nodos Internos (Incognitas): " << mesh.num_active_nodes << endl;
-    cout << "Caras de Frontera:" << endl;
-    cout << "  - Oeste (West):  " << mesh.bound_west.size() << " caras" << endl;
-    cout << "  - Este (East):   " << mesh.bound_east.size() << " caras" << endl;
-    cout << "  - Sur (South):   " << mesh.bound_south.size() << " caras" << endl;
-    cout << "  - Norte (North): " << mesh.bound_north.size() << " caras" << endl;
+    // 1. PRINT SUMMARY
+    cout << "\n=== MESH SUMMARY ===" << endl;
+    cout << "Logical dimensions (Nx x My): " << mesh.N_cells_x << " x " << mesh.M_cells_y << endl;
+    cout << "Total internal nodes (unknowns): " << mesh.num_active_nodes << endl;
+    cout << "Boundary faces:" << endl;
+    cout << "  - West:  " << mesh.bound_west.size() << " faces" << endl;
+    cout << "  - East:  " << mesh.bound_east.size() << " faces" << endl;
+    cout << "  - South: " << mesh.bound_south.size() << " faces" << endl;
+    cout << "  - North: " << mesh.bound_north.size() << " faces" << endl;
     print_line();
 
-    // 2. BUCLE INTERACTIVO
-    char opcion;
+    // 2. INTERACTIVE LOOP
+    char option;
     do {
-        cout << "\nSelecciona que deseas inspeccionar:" << endl;
-        cout << " [I]nspeccionar un Nodo Interno (Por ID)" << endl;
-        cout << " [F]ronteras (Listar datos de una pared)" << endl;
-        cout << " [S]alir" << endl;
-        cout << "Opcion: ";
-        cin >> opcion;
-        opcion = toupper(opcion);
+        cout << "\nSelect what to inspect:" << endl;
+        cout << " [I]nternal node (by ID)" << endl;
+        cout << " [B]oundaries (list the data of one wall)" << endl;
+        cout << " [Q]uit" << endl;
+        cout << "Option: ";
+        cin >> option;
+        option = toupper(option);
 
-        if (opcion == 'I') {
+        if (option == 'I') {
             int node_id;
-            cout << "\nIntroduce ID del nodo interno (0 a " << mesh.num_active_nodes - 1 << "): ";
+            cout << "\nEnter internal node ID (0 to " << mesh.num_active_nodes - 1 << "): ";
             cin >> node_id;
 
             if (node_id >= 0 && node_id < mesh.num_active_nodes) {
                 const InternalCell& cell = mesh.cells[node_id];
 
                 print_line();
-                cout << " DETALLES DEL NODO INTERNO ID: " << cell.global_id << endl;
-                cout << " Centroide (x, y): (" << cell.x << ", " << cell.y << ")" << endl;
-                cout << " Volumen: " << cell.Vol << " m3" << endl;
+                cout << " INTERNAL NODE DETAILS, ID: " << cell.global_id << endl;
+                cout << " Centroid (x, y): (" << cell.x << ", " << cell.y << ")" << endl;
+                cout << " Volume: " << cell.Vol << " m3" << endl;
                 print_line();
-                cout << " CONECTIVIDAD (VECINOS):" << endl;
+                cout << " CONNECTIVITY (NEIGHBOURS):" << endl;
 
-                // Lambda local para imprimir
+                // Local printing lambda
                 auto check_neighbor = [](string dir, int n_id, bool is_bc) {
                     cout << "   " << left << setw(10) << dir << ": ";
                     if (is_bc) {
-                        cout << "[CONDICION DE FRONTERA / PARED]" << endl;
+                        cout << "[BOUNDARY CONDITION / WALL]" << endl;
                     } else if (n_id != -1) {
-                        cout << "Nodo Interno ID " << n_id << endl;
+                        cout << "Internal node ID " << n_id << endl;
                     } else {
-                        cout << "Error (No conectado)" << endl;
+                        cout << "Error (not connected)" << endl;
                     }
                 };
 
-                check_neighbor("ESTE",  cell.n_east,  cell.bc_east);
-                check_neighbor("OESTE", cell.n_west,  cell.bc_west);
-                check_neighbor("NORTE", cell.n_north, cell.bc_north);
-                check_neighbor("SUR",   cell.n_south, cell.bc_south);
+                check_neighbor("EAST",  cell.n_east,  cell.bc_east);
+                check_neighbor("WEST",  cell.n_west,  cell.bc_west);
+                check_neighbor("NORTH", cell.n_north, cell.bc_north);
+                check_neighbor("SOUTH", cell.n_south, cell.bc_south);
                 print_line();
 
             } else {
-                cout << "Error: ID fuera de rango." << endl;
+                cout << "Error: ID out of range." << endl;
             }
 
-        } else if (opcion == 'F') {
-            char pared;
-            cout << "Cual pared? (W: Oeste, E: Este, S: Sur, N: Norte): ";
-            cin >> pared;
-            pared = toupper(pared);
+        } else if (option == 'B') {
+            char wall;
+            cout << "Which wall? (W: West, E: East, S: South, N: North): ";
+            cin >> wall;
+            wall = toupper(wall);
 
             const vector<BoundaryFace>* selected_bound = nullptr;
-            string nombre_pared = "";
+            string wall_name = "";
 
-            if (pared == 'W') { selected_bound = &mesh.bound_west; nombre_pared = "OESTE"; }
-            else if (pared == 'E') { selected_bound = &mesh.bound_east; nombre_pared = "ESTE"; }
-            else if (pared == 'S') { selected_bound = &mesh.bound_south; nombre_pared = "SUR"; }
-            else if (pared == 'N') { selected_bound = &mesh.bound_north; nombre_pared = "NORTE"; }
+            if (wall == 'W') { selected_bound = &mesh.bound_west; wall_name = "WEST"; }
+            else if (wall == 'E') { selected_bound = &mesh.bound_east; wall_name = "EAST"; }
+            else if (wall == 'S') { selected_bound = &mesh.bound_south; wall_name = "SOUTH"; }
+            else if (wall == 'N') { selected_bound = &mesh.bound_north; wall_name = "NORTH"; }
 
             if (selected_bound) {
-                cout << "\n--- LISTADO DE CARAS EN PARED " << nombre_pared << " ---" << endl;
+                cout << "\n--- FACES ON THE " << wall_name << " WALL ---" << endl;
                 cout << left << setw(8)  << "Idx"
                              << setw(12) << "x"
                              << setw(12) << "y"
                              << setw(12) << "Area"
-                             << setw(20) << "Tipo BC"
-                             << setw(10) << "Valor" << endl;
+                             << setw(20) << "BC type"
+                             << setw(10) << "Value" << endl;
                 print_line();
                 int idx = 0;
                 for (const auto& face : *selected_bound) {
@@ -974,20 +972,20 @@ void MeshConfig::inspect_mesh(const GridData& mesh) const {
                 }
                 print_line();
             } else {
-                cout << "Pared no valida." << endl;
+                cout << "Invalid wall." << endl;
             }
         }
 
-    } while (opcion != 'S');
+    } while (option != 'Q');
 }
 
 
-// Función para parsear el string del archivo a Enum
+// Parses a BC type string from the input file into the enum
 BCType string_to_bc_enum(const string& s) {
     if (s == "INLET") return INLET;
     if (s == "INLET_PARABOLIC") return INLET;   // per-face profile, see define_boundaries
     if (s == "OUTLET") return OUTLET;
-    if (s == "WALL") return WALL_ADIABATIC; // Por defecto
+    if (s == "WALL") return WALL_ADIABATIC; // Default
     if (s == "WALL_FIXED_VALUE") return WALL_FIXED_VALUE;
     if (s == "WALL_ADIABATIC") return WALL_ADIABATIC;
     if (s == "WALL_ISOTHERMAL") return WALL_ISOTHERMAL;
@@ -998,34 +996,34 @@ BCType string_to_bc_enum(const string& s) {
 void MeshConfig::define_boundaries(GridData& mesh, const std::string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir " << filename << endl;
+        cerr << "Error: could not open " << filename << endl;
         return;
     }
 
-    cout << "--- Cargando Condiciones de Frontera desde " << filename << " ---" << endl;
+    cout << "--- Loading boundary conditions from " << filename << " ---" << endl;
 
     string line;
     while (getline(file, line)) {
-        // Ignorar comentarios (#) o líneas vacías
+        // Skip comments (#) and empty lines
         if (line.empty() || line[0] == '#') continue;
 
         stringstream ss(line);
         string boco_name, face_dir, type_str;
         int idx_start, idx_end;
 
-        // Leer formato: BOCO_NAME CARA INICIO FIN TIPO [VALOR]
-        // Ejemplo: INLET WEST 0 50 INLET 1.0
+        // Format: BOCO_NAME FACE START END TYPE [VALUE]
+        // Example: INLET WEST 0 50 INLET 1.0
         ss >> boco_name >> face_dir >> idx_start >> idx_end >> type_str;
         double val = 0.0;
-        ss >> val; // Si no hay valor en la línea, val queda en 0.0
+        ss >> val; // If the line has no value, val stays 0.0
 
-        // 1. Seleccionar el vector correcto según la dirección
+        // 1. Select the right vector for the direction
         vector<BoundaryFace>* target_vec = nullptr;
         int max_limit = 0;
 
         if (face_dir == "WEST") { 
             target_vec = &mesh.bound_west; 
-            max_limit = mesh.M_cells_y; // West/East dependen de Y (j)
+            max_limit = mesh.M_cells_y; // West/East depend on Y (j)
         } 
         else if (face_dir == "EAST") { 
             target_vec = &mesh.bound_east; 
@@ -1033,16 +1031,16 @@ void MeshConfig::define_boundaries(GridData& mesh, const std::string& filename) 
         }
         else if (face_dir == "SOUTH") { 
             target_vec = &mesh.bound_south; 
-            max_limit = mesh.N_cells_x; // South/North dependen de X (i)
+            max_limit = mesh.N_cells_x; // South/North depend on X (i)
         }
         else if (face_dir == "NORTH") { 
             target_vec = &mesh.bound_north; 
             max_limit = mesh.N_cells_x; 
         }
 
-        // 2. Aplicar las condiciones al rango seleccionado
+        // 2. Apply the conditions to the selected range
         if (target_vec) {
-            // Protección de rango
+            // Range guard
             if (idx_end > max_limit) idx_end = max_limit; 
             if (idx_start < 0) idx_start = 0;
 
@@ -1052,14 +1050,14 @@ void MeshConfig::define_boundaries(GridData& mesh, const std::string& filename) 
             // u(y) = 4 U_max (y - y0)(y1 - y) / H^2, with U_max = val on the axis.
             const bool parabolic = (type_str == "INLET_PARABOLIC");
             if (parabolic && face_dir != "WEST" && face_dir != "EAST") {
-                cerr << "Error: INLET_PARABOLIC solo admite WEST/EAST" << endl;
+                cerr << "Error: INLET_PARABOLIC only supports WEST/EAST" << endl;
             }
             const double y0 = mesh.yvc.front();
             const double y1 = mesh.yvc.back();
             const double H  = y1 - y0;
 
             for (int k = idx_start; k < idx_end; ++k) {
-                // Como los vectores de frontera tienen tamaño exacto, verificamos k
+                // The boundary vectors have an exact size, so check k
                 if (k < (int)target_vec->size()) {
                     BoundaryFace& f = (*target_vec)[k];
                     f.type  = type_enum;
@@ -1068,10 +1066,10 @@ void MeshConfig::define_boundaries(GridData& mesh, const std::string& filename) 
                     f.boco  = boco_name;
                 }
             }
-            cout << " -> Boco [" << boco_name << "] " << type_str << " en " << face_dir
+            cout << " -> Boco [" << boco_name << "] " << type_str << " on " << face_dir
                  << " [" << idx_start << "-" << idx_end << "]" << endl;
         } else {
-            cerr << "Error: Direccion desconocida " << face_dir << endl;
+            cerr << "Error: unknown direction " << face_dir << endl;
         }
     }
     file.close();
@@ -1103,12 +1101,12 @@ void MeshConfig::define_temperature_boundaries(GridData& mesh, const std::string
 
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir " << filename
-             << " (condiciones de temperatura). Usando adiabatico por defecto." << endl;
+        cerr << "Error: could not open " << filename
+             << " (temperature conditions). Using adiabatic walls by default." << endl;
         return;
     }
 
-    cout << "--- Cargando Condiciones de Temperatura desde " << filename << " ---" << endl;
+    cout << "--- Loading temperature boundary conditions from " << filename << " ---" << endl;
 
     string line;
     while (getline(file, line)) {
@@ -1140,10 +1138,10 @@ void MeshConfig::define_temperature_boundaries(GridData& mesh, const std::string
                     (*target_vec)[k].boco  = boco_name;
                 }
             }
-            cout << " -> T-Boco [" << boco_name << "] " << type_str << " en " << face_dir
+            cout << " -> T-Boco [" << boco_name << "] " << type_str << " on " << face_dir
                  << " [" << idx_start << "-" << idx_end << "] val=" << val << endl;
         } else {
-            cerr << "Error: Direccion desconocida " << face_dir << endl;
+            cerr << "Error: unknown direction " << face_dir << endl;
         }
     }
     file.close();

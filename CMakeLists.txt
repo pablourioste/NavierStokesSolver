@@ -60,7 +60,7 @@ target_include_directories(mesh_gen PRIVATE
 target_compile_options(mesh_gen PRIVATE -Wall -Wextra)
 
 # ---------------------------------------------------------------------------
-# Executable: reynolds_sweep  (batería de casos Re)
+# Executable: reynolds_sweep  (batch of Re cases)
 # ---------------------------------------------------------------------------
 add_executable(reynolds_sweep
     src/reynolds_sweep.cpp
@@ -81,7 +81,7 @@ target_include_directories(reynolds_sweep PRIVATE
 target_compile_options(reynolds_sweep PRIVATE -Wall -Wextra)
 
 # ---------------------------------------------------------------------------
-# Executable: operator_verify  (verificación MMS independiente)
+# Executable: operator_verify  (standalone MMS verification)
 # ---------------------------------------------------------------------------
 add_executable(operator_verify
     src/verification/verify_operators.cpp

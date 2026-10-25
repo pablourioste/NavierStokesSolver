@@ -5,29 +5,28 @@
 // =============================================================================
 // DivergenceOperator
 //
-// Discretiza la divergencia  ∇·u  integrando el flujo neto sobre cada celda P
-// mediante el método de volúmenes finitos (FVM).
+// Discretises the divergence  ∇·u  by integrating the net flux over each P
+// cell with the finite-volume method (FVM).
 //
-// Para la celda P con índices lógicos (i,j):
+// For the P cell with logical indices (i,j):
 //
 //   flux = u_E * Se  −  u_W * Sw  +  v_N * Sn  −  v_S * Ss
 //
-//   Convención de normal exterior:
-//     Cara Este  (n̂=+x): +u_E * Se
-//     Cara Oeste (n̂=−x): −u_W * Sw
-//     Cara Norte (n̂=+y): +v_N * Sn
-//     Cara Sur   (n̂=−y): −v_S * Ss
+//   Outward-normal convention:
+//     East face  (n̂=+x): +u_E * Se
+//     West face  (n̂=−x): −u_W * Sw
+//     North face (n̂=+y): +v_N * Sn
+//     South face (n̂=−y): −v_S * Ss
 //
-//   Mapeado de índices escalonados para P(i,j):
+//   Staggered index mapping for P(i,j):
 //     u_E = u[uIdx(i+1, j)],  u_W = u[uIdx(i,   j)]
 //     v_N = v[vIdx(i,   j+1)], v_S = v[vIdx(i,   j)]
 //
-// El resultado se divide por el volumen de celda V[i][j], dando
-// la divergencia por unidad de volumen (dimensiones de [1/tiempo] si
-// u tiene dimensiones de velocidad). Esto permite comparar directamente
-// con ∇·u analítico en las pruebas MMS.
+// The result is divided by the cell volume V[i][j], giving the divergence
+// per unit volume (units of [1/time] if u has units of velocity). This
+// allows a direct comparison with the analytical ∇·u in the MMS tests.
 //
-// IMPORTANTE: sin factores ρ/dt — operador puramente geométrico.
+// IMPORTANT: no ρ/dt factors — purely geometric operator.
 // =============================================================================
 class DivergenceOperator {
 public:
@@ -35,9 +34,9 @@ public:
                        const GridData& uMesh,
                        const GridData& vMesh);
 
-    // Calcula ∇·u discreto por unidad de volumen en cada celda P.
-    // Entrada: u (tamaño uMesh.num_active_nodes), v (tamaño vMesh.num_active_nodes)
-    // Salida:  vector de tamaño pMesh.num_active_nodes
+    // Computes the discrete ∇·u per unit volume in every P cell.
+    // Input:  u (size uMesh.num_active_nodes), v (size vMesh.num_active_nodes)
+    // Output: vector of size pMesh.num_active_nodes
     Vector apply(const Vector& u, const Vector& v) const;
 
 private:

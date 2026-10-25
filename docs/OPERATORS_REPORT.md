@@ -134,7 +134,7 @@ D : (U, V) → P
 **Role:** Computes the volumetric flux divergence at each P-cell. The pressure-Poisson
 right-hand side is:
 ```
-b = (ρ/dt) · D·u*
+b = −(ρ/dt) · V · D·u*     (minus sign: the assembled matrix is A ≈ −V·∇²)
 ```
 After projection, D·u^{n+1} = 0 (incompressibility) to machine precision.
 
@@ -158,7 +158,7 @@ centroid) for boundary cells — see Suite 3 notes below.
 
 **Used by:**
 - [src/PressurePoissonSystem.cpp](../src/PressurePoissonSystem.cpp) — `computeRHS()` evaluates
-  `(ρ/dt)·D·u*`
+  `−(ρ/dt)·V·D·u*`
 - [src/verification/verify_operators.cpp](../src/verification/verify_operators.cpp) — Suites 3, 5, 8
 
 ---
@@ -433,7 +433,7 @@ guaranteed if any coefficient in the boundary treatment has an asymmetric implem
 
 ### Suite 10 — LaplaceOperator on a stretched mesh (first-order limitation)
 
-**Why:** Production runs use tanh-stretched grids (see `input/stretch.txt`).
+**Why:** Production runs use stretched grids (see each scenario's `input/<scenario>/stretch.txt`).
 This suite exposes a limitation of the current FVM stencil on non-uniform meshes.
 
 **Grid mapping:** Uniform parameter ξ ∈ [0,1] → physical coordinate x via:

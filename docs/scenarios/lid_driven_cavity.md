@@ -48,13 +48,13 @@ classes involved, see [../theory/mesh.md](../theory/mesh.md) and
 
 For each Reynolds number in the sweep:
 - `nu` is derived from `Re` as $\nu = U_{lid}L/Re$
-  ([src/main.cpp:302](../../src/main.cpp#L302)).
+  ([src/main.cpp:311](../../src/main.cpp#L311)).
 - The time loop runs the standard predictor → pressure-projection pipeline
   (see [../theory/solver.md §0](../theory/solver.md#0-overview-the-per-timestep-pipeline))
   with no buoyancy/energy steps.
 - Steady state is detected when the max velocity change per step,
   $\lVert \Delta u\rVert_\infty/\Delta t$, drops below `ss_tol`
-  ([src/main.cpp:392](../../src/main.cpp#L392)).
+  ([src/main.cpp:421](../../src/main.cpp#L421)).
 
 ## 4. Outputs
 

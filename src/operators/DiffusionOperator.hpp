@@ -6,32 +6,32 @@
 // =============================================================================
 // DiffusionOperator
 //
-// Discretiza el término de difusión  ν∇²u  y  ν∇²v  de las ecuaciones de
-// momentum sobre las mallas escalonadas U y V, usando diferencias finitas de
-// 2.º orden en malla no uniforme.
+// Discretises the diffusion terms  ν∇²u  and  ν∇²v  of the momentum
+// equations on the staggered U and V meshes, using 2nd-order finite
+// differences on a non-uniform mesh.
 //
-// Para un nodo U interior (k=2..N, j=1..M):
+// For an interior U node (k=2..N, j=1..M):
 //
 //   d²u/dx² = 2/(dx_e + dx_w) * [(u_E - u_P)/dx_e − (u_P - u_W)/dx_w]
 //   d²u/dy² = 2/(dy_n + dy_s) * [(u_N - u_P)/dy_n − (u_P - u_S)/dy_s]
-//   resultado = ν * (d²u/dx² + d²u/dy²)
+//   result = ν * (d²u/dx² + d²u/dy²)
 //
-// En las paredes (j=1 o j=M) se aplica el método imagen (celda fantasma):
+// At the walls (j=1 or j=M) the image method (ghost cell) is applied:
 //   u_ghost = 2·u_wall − u_P    →  (u_ghost + u_P)/2 = u_wall  ✓
-//   dist    = 2·(y_P − y_wall)   →  distancia correcta a la cara de frontera
+//   dist    = 2·(y_P − y_wall)   →  correct distance to the boundary face
 //
-// Los valores de celda fantasma deben proporcionarse al constructor.
-// Para paredes no-slip (velocidad = 0): ghost = −u_P → se pasa u_wall = 0.
-// Para la tapa (NORTH, u_wall = U_lid): ghost = 2·U_lid − u_P.
+// The ghost-cell wall values must be passed to the constructor.
+// For no-slip walls (velocity = 0): ghost = −u_P → pass u_wall = 0.
+// For the lid (NORTH, u_wall = U_lid): ghost = 2·U_lid − u_P.
 //
-// NOTA: este operador solo contiene el término DIFUSIVO. La convección
-// permanece en MomentumSolver.
+// NOTE: this operator contains only the DIFFUSIVE term. Convection stays in
+// MomentumSolver.
 // =============================================================================
 class DiffusionOperator {
 public:
-    // nu              : viscosidad cinemática
-    // u_ghost_north/south: valor prescrito en la pared N/S para u
-    // v_ghost_west/east  : valor prescrito en la pared O/E para v
+    // nu                 : kinematic viscosity
+    // u_ghost_north/south: prescribed u value on the N/S wall
+    // v_ghost_west/east  : prescribed v value on the W/E wall
     DiffusionOperator(const GridData& pMesh,
                       const GridData& uMesh,
                       const GridData& vMesh,
@@ -41,16 +41,16 @@ public:
                       double v_ghost_west,
                       double v_ghost_east);
 
-    // ν∇²u en todos los nodos U. Solo se calculan los nodos interiores (k=2..N).
-    // Los nodos de frontera (k=1, k=N+1) se ponen a 0.0 en el vector resultado.
+    // ν∇²u at every U node. Only interior nodes (k=2..N) are computed.
+    // Boundary nodes (k=1, k=N+1) are set to 0.0 in the result vector.
     void applyU(const Vector& u, Vector& result) const;
 
-    // ν∇²v en todos los nodos V. Solo se calculan los nodos interiores (l=2..M).
-    // Los nodos de frontera (l=1, l=M+1) se ponen a 0.0 en el vector resultado.
+    // ν∇²v at every V node. Only interior nodes (l=2..M) are computed.
+    // Boundary nodes (l=1, l=M+1) are set to 0.0 in the result vector.
     void applyV(const Vector& v, Vector& result) const;
 
-    // Núcleos de cálculo por nodo — públicos para que MomentumSolver pueda
-    // delegar la parte difusiva de uRHS/vRHS sin duplicar la fórmula.
+    // Per-node kernels — public so that MomentumSolver can delegate the
+    // diffusive part of uRHS/vRHS without duplicating the formula.
     double diffuseU(const Vector& u, int k, int j) const;
     double diffuseV(const Vector& v, int i, int l) const;
 

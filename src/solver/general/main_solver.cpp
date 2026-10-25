@@ -25,18 +25,18 @@ int main() {
     Vector b(N);
 
     for (int i = 0; i < N; i++) {
-        // Diagonal principal potente para asegurar convergencia (SPD)
+        // Strong main diagonal to guarantee convergence (SPD)
         denseA[i][i] = 4.0; 
         
-        // Sub-diagonal y Super-diagonal (Simetría)
+        // Sub- and super-diagonal (symmetric)
         if (i > 0) denseA[i][i-1] = -1.0;
         if (i < N-1) denseA[i][i+1] = -1.0;
         
-        // Acoplamientos lejanos (para que no sea solo una línea)
+        // Far couplings (so the matrix is not just a band)
         if (i > 4) denseA[i][i-5] = -0.5;
         if (i < N-5) denseA[i][i+5] = -0.5;
 
-        // Vector b (por ejemplo, b[i] = i)
+        // Right-hand side (e.g. b[i] = i)
         b[i] = (double)i;
     }
      Matrix A=denseA;

@@ -37,7 +37,7 @@ GridData pMesh = myConfig.generate_mesh();        // pressure / temperature
 GridData uMesh = myConfig.generate_u_mesh(pMesh);  // u-velocity
 GridData vMesh = myConfig.generate_v_mesh(pMesh);  // v-velocity
 ```
-([src/main.cpp:85-87](../../src/main.cpp#L85-L87))
+([src/main.cpp:153-155](../../src/main.cpp#L153-L155))
 
 | Grid | Lives at | Size (N×M pressure cells) | Role |
 |---|---|---|---|
@@ -46,7 +46,7 @@ GridData vMesh = myConfig.generate_v_mesh(pMesh);  // v-velocity
 | `vMesh` | horizontal (north/south) faces | $N \times (M{+}1)$ | $v$-velocity |
 
 - **`uMesh` construction**
-  ([src/mesh/MeshGenerator.cpp:333-385](../../src/mesh/MeshGenerator.cpp#L333-L385)):
+  ([src/mesh/MeshGenerator.cpp:333-389](../../src/mesh/MeshGenerator.cpp#L333-L389)):
   shares `pMesh`'s Y faces exactly, and places U-cell boundaries at the
   **centers** of the P cells in X — so U node $k$ sits exactly on the shared
   face between P cells $(k-1)$ and $k$. This is what makes the staggering
@@ -123,7 +123,7 @@ done with a `sinh`-based mapping in
   differentially heated cavity this lets the mesh resolve the thin thermal
   boundary layers at the hot/cold walls, where the Nusselt number is measured.
 - Each of `beta_x_west`, `beta_x_east`, `beta_y_north`, `beta_y_south`
-  (`input/stretch.txt`) controls stretching **independently per zone/side**.
+  (`input/<scenario>/stretch.txt`) controls stretching **independently per zone/side**.
 
 > **Known accuracy caveat:** `LaplaceOperator`'s current FVM stencil uses
 > `a_E = Se / (x[i+1] - x[i])`, which is only first-order accurate when the
@@ -141,13 +141,13 @@ done with a `sinh`-based mapping in
 - The domain is partitioned in X into **west / center / east** zones and in Y
   into **south / center / north** zones, each stretched independently and
   then merged into one set of global face coordinates
-  ([src/mesh/MeshGenerator.cpp:195-229](../../src/mesh/MeshGenerator.cpp#L195-L229)).
+  ([src/mesh/MeshGenerator.cpp:191-237](../../src/mesh/MeshGenerator.cpp#L191-L237)).
 - Zone boundaries are set by four corner nodes in
-  [input/data.txt](../../input/data.txt): `node_NW`, `node_NE`, `node_SW`,
+  `input/<scenario>/data.txt` (e.g. [the lid-driven cavity's](../../input/lid_driven_cavity/data.txt)): `node_NW`, `node_NE`, `node_SW`,
   `node_SE`.
 - **For the two closed-cavity scenarios** (lid-driven cavity, differentially
   heated cavity), the corner nodes are placed at the domain corners and
-  `center`/`east` zone cell counts are set to 0 in `input/stretch.txt`, which
+  `center`/`east` zone cell counts are set to 0 in `stretch.txt`, which
   collapses the partition to a **single** west/south block covering the whole
   domain — i.e. a plain rectangular cavity, just built through a more general
   3-zone machinery.
@@ -173,21 +173,21 @@ done with a `sinh`-based mapping in
   and future general-stencil needs; the production solvers address
   neighbors directly via the `pIdx`/`uIdx`/`vIdx` formulas in §2 rather than
   walking this table.
-- [`define_boundaries`](../../src/mesh/MeshGenerator.cpp#L915) reads
-  [input/boundaries.txt](../../input/boundaries.txt) and populates
+- [`define_boundaries`](../../src/mesh/MeshGenerator.cpp#L996) reads
+  `input/<scenario>/boundaries.txt` (e.g. [the lid-driven cavity's](../../input/lid_driven_cavity/boundaries.txt)) and populates
   `mesh.bound_west/east/north/south` — one `BoundaryFace` entry per boundary
   cell on that side, carrying a `BCType` and a prescribed value.
   - File format: `BOCO_NAME  FACE  IDX_START  IDX_END  TYPE  VALUE`, where
     the index range is **half-open** `[start, end)` — `0 9999` covers an
     entire side regardless of mesh resolution.
-- [`define_temperature_boundaries`](../../src/mesh/MeshGenerator.cpp#L993)
+- [`define_temperature_boundaries`](../../src/mesh/MeshGenerator.cpp#L1086)
   does the same for temperature, reading
-  [input/boundaries_T.txt](../../input/boundaries_T.txt) into the parallel
+  [input/differentially_heated_cavity/boundaries_T.txt](../../input/differentially_heated_cavity/boundaries_T.txt) into the parallel
   `bound_*_T` lists. It **copies geometry** (position, area) from the
   velocity boundary lists and only overwrites type/value — faces not
   mentioned default to adiabatic (`WALL_ADIABATIC`).
 - **`BCType`** enum
-  ([src/mesh/Mesh_config.h:18-26](../../src/mesh/Mesh_config.h#L18-L26)):
+  ([src/mesh/Mesh_config.h:25-33](../../src/mesh/Mesh_config.h#L25-L33)):
   `WALL_ADIABATIC`, `WALL_FIXED_VALUE`, `INLET`, `OUTLET`, `SYMMETRY`,
   `WALL_ISOTHERMAL`, `UNDEFINED`. Velocity BCs mainly use `WALL_FIXED_VALUE`
   (e.g. the moving lid) and plain `WALL` (no-slip, value 0); temperature BCs

@@ -67,7 +67,7 @@ Two different non-dimensional scalings are used depending on the scenario
 
 | Scenario | Governing number | How it enters |
 |---|---|---|
-| Lid-Driven Cavity | Reynolds number $Re = U_{lid} L / \nu$ | `nu` is set directly from `Re` in [sim_params.txt](../../input/sim_params.txt) / `reynolds_cases.txt` sweep |
+| Lid-Driven Cavity | Reynolds number $Re = U_{lid} L / \nu$ | `nu` is derived from each `Re` of the [reynolds_cases.txt](../../input/lid_driven_cavity/reynolds_cases.txt) sweep ($\nu = U_{lid}L/Re$) |
 | Differentially Heated Cavity | Rayleigh $Ra$, Prandtl $Pr$ (de Vahl Davis 1983 scaling) | momentum diffusion `nu = Pr`; buoyancy coefficient `dt·Ra·Pr` — see [Buoyancy.hpp:34](../../src/Buoyancy.hpp#L34) |
 
 In the Ra–Pr scaling, thermal diffusivity is fixed at $\alpha = 1$, and all
@@ -196,7 +196,7 @@ correct wall condition.
   $$
   i.e. zero normal gradient across the wall.
 - The ghost values are computed **once per case**, from the boundary
-  condition tables (`input/boundaries.txt`, `input/boundaries_T.txt`), and
+  condition tables (`input/<scenario>/boundaries.txt`, `boundaries_T.txt`), and
   reused at every time step — not recomputed per iteration.
 - Geometric details (why the wall-distance needs a factor of 2, how this
   interacts with the non-uniform/stretched grid) are covered in
@@ -212,7 +212,7 @@ correct wall condition.
 | Driving mechanism | moving lid (Dirichlet velocity BC) | horizontal temperature gradient → buoyancy |
 | Non-dimensional number | $Re$ | $Ra$, $Pr$ |
 | Core solver touched? | — | **no** — energy/buoyancy are added externally |
-| Switch | `solve_energy = 0` in `input/sim_params.txt` | `solve_energy = 1` |
+| Switch | `scenario = lid_driven_cavity` in `input/scenario.txt` (`solve_energy = 0`) | `scenario = differentially_heated_cavity` (`solve_energy = 1` in its `sim_params.txt`) |
 
 See [../scenarios/lid_driven_cavity.md](../scenarios/lid_driven_cavity.md) and
 [../scenarios/differentially_heated_cavity.md](../scenarios/differentially_heated_cavity.md)

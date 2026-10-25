@@ -1,180 +1,187 @@
+// Legacy single-file reference prototype of the lid-driven cavity solver
+// (uniform staggered grid, explicit CDS momentum, Gauss-Seidel pressure).
+// Kept for reference only: it is not part of the CMake build.
+
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <fstream>
-#include <algorithm> // per a la funció std::max
+#include <string>
+#include <algorithm> // for std::max
 
 using namespace std;
 
-// Funció per inicialitzar una matriu 2D de mida (N+2) x (M+2) a zero
-vector<vector<double>> crearMatriu(int N, int M) {
+// Creates a 2D matrix of size (N+2) x (M+2) initialised to zero
+vector<vector<double>> create_matrix(int N, int M) {
     return vector<vector<double>>(N + 2, vector<double>(M + 2, 0.0));
 }
 
 // =========================================================
-// FUNCIÓ: CONDICIONS DE CONTORN (Lid-Driven Cavity)
+// FUNCTION: BOUNDARY CONDITIONS (Lid-Driven Cavity)
 // =========================================================
-void aplicar_condicions_contorno(int N, int M, double U_ref,
-                                 vector<vector<double>>& u,
-                                 vector<vector<double>>& v,
-                                 vector<vector<double>>& P) {
+void apply_boundary_conditions(int N, int M, double U_ref,
+                               vector<vector<double>>& u,
+                               vector<vector<double>>& v,
+                               vector<vector<double>>& P) {
 
-    // 1. Parets VERTICALS (Esquerra i Dreta)
+    // 1. VERTICAL walls (left and right)
     for (int j = 1; j <= M; ++j) {
-        // Velocitat U (Perpendicular a la paret vertical): El node cau EXACTAMENT a la paret
-        u[1][j]   = 0.0; // Paret Oest (Esquerra)
-        u[N+1][j] = 0.0; // Paret Est (Dreta)
+        // Velocity U (normal to the vertical wall): the node lies EXACTLY on the wall
+        u[1][j]   = 0.0; // West wall (left)
+        u[N+1][j] = 0.0; // East wall (right)
 
-        // Velocitat V (Paral·lela a la paret vertical): El node no està a la paret.
-        // Interpolem amb el "Ghost cell" perquè la mitjana a la paret doni 0.
-        v[0][j]   = -v[1][j]; // Ghost cell Oest
-        v[N+1][j] = -v[N][j]; // Ghost cell Est
+        // Velocity V (parallel to the vertical wall): the node is not on the wall.
+        // Use a ghost cell so that the average at the wall is 0.
+        v[0][j]   = -v[1][j]; // West ghost cell
+        v[N+1][j] = -v[N][j]; // East ghost cell
 
-        // Pressió (Neumann dp/dn = 0): El gradient és nul, el ghost cell copia l'interior
+        // Pressure (Neumann dp/dn = 0): zero gradient, the ghost cell copies the interior
         P[0][j]   = P[1][j];
         P[N+1][j] = P[N][j];
     }
 
-    // 2. Parets HORITZONTALS (Inferior i Superior)
+    // 2. HORIZONTAL walls (bottom and top)
     for (int i = 1; i <= N; ++i) {
-        // Velocitat V (Perpendicular a la paret horitzontal): El node cau EXACTAMENT a la paret
-        v[i][1]   = 0.0; // Paret Sud (Sòl)
-        v[i][M+1] = 0.0; // Paret Nord (Tapa)
+        // Velocity V (normal to the horizontal wall): the node lies EXACTLY on the wall
+        v[i][1]   = 0.0; // South wall (floor)
+        v[i][M+1] = 0.0; // North wall (lid)
 
-        // Velocitat U (Paral·lela a la paret horitzontal):
-        // Paret Sud (Sòl fix): u = 0
+        // Velocity U (parallel to the horizontal wall):
+        // South wall (fixed floor): u = 0
         u[i][0]   = -u[i][1];
 
-        // Paret Nord (Tapa mòbil Lid-Driven): u = U_ref
+        // North wall (moving lid): u = U_ref
         // (u_ghost + u_interior) / 2 = U_ref  =>  u_ghost = 2*U_ref - u_interior
         u[i][M+1] = 2.0 * U_ref - u[i][M];
 
-        // Pressió (Neumann dp/dn = 0)
+        // Pressure (Neumann dp/dn = 0)
         P[i][0]   = P[i][1];
         P[i][M+1] = P[i][M];
     }
 }
 
 // =========================================================
-// FUNCIÓ: CÀLCUL DE LA VELOCITAT PREDICTORA (Passos 1 i 2)
+// FUNCTION: PREDICTOR VELOCITY (steps 1 and 2)
 // =========================================================
-void calcular_velocitat_predictora(int N, int M, double dx, double dt, double rho, double mu,
-                                   const vector<vector<double>>& u,
-                                   const vector<vector<double>>& v,
-                                   vector<vector<double>>& u_p,
-                                   vector<vector<double>>& v_p) {
+void compute_predictor_velocity(int N, int M, double dx, double dt, double rho, double mu,
+                                const vector<vector<double>>& u,
+                                const vector<vector<double>>& v,
+                                vector<vector<double>>& u_p,
+                                vector<vector<double>>& v_p) {
 
-    // Assumim malla quadrada uniforme: dx = dy
-    double dVol = dx * dx; // Volum de la cel·la 2D (Area = dx*dy = dx^2)
+    // Assumes a uniform square mesh: dx = dy
+    double dVol = dx * dx; // 2D cell volume (area = dx*dy = dx^2)
 
     // ---------------------------------------------------------
-    // 1. Malla Staggered-X (Eix horitzontal, velocitat U)
+    // 1. Staggered-X mesh (horizontal axis, velocity U)
     // ---------------------------------------------------------
-    // Comencem en i=2 perquè u[1][j] és la paret esquerra (que ja és 0 per BCs)
+    // Start at i=2 because u[1][j] is the left wall (already 0 from the BCs)
     for (int i = 2; i <= N; ++i) {
         for (int j = 1; j <= M; ++j) {
 
-            // A. Interpolació a les cares (Esquema CDS - Mitjana aritmètica)
-            double u_e = 0.5 * (u[i+1][j] + u[i][j]);   // Cara Est
-            double u_w = 0.5 * (u[i-1][j] + u[i][j]);   // Cara Oest
-            double u_n = 0.5 * (u[i][j+1] + u[i][j]);   // Cara Nord
-            double u_s = 0.5 * (u[i][j-1] + u[i][j]);   // Cara Sud
+            // A. Interpolation to the faces (CDS scheme - arithmetic mean)
+            double u_e = 0.5 * (u[i+1][j] + u[i][j]);   // East face
+            double u_w = 0.5 * (u[i-1][j] + u[i][j]);   // West face
+            double u_n = 0.5 * (u[i][j+1] + u[i][j]);   // North face
+            double u_s = 0.5 * (u[i][j-1] + u[i][j]);   // South face
 
-            // EL TRENCACLOSQUES: Velocitat vertical v a les cares Nord/Sud de U
-            // Com no hi ha node V al centre de la cara Nord de U, interpolem els 2 nodes V adjacents.
+            // THE TRICKY PART: vertical velocity v on the North/South faces of U.
+            // There is no V node at the centre of U's North face, so the 2
+            // adjacent V nodes are interpolated.
             double v_n = 0.5 * (v[i-1][j+1] + v[i][j+1]);
             double v_s = 0.5 * (v[i-1][j]   + v[i][j]);
 
-            // B. Terme Convectiu: -[m_e*u_e - m_w*u_w + m_n*u_n - m_s*u_s]
-            // Nota: El flux màssic m_e és (rho * u_e * Area_cara). Area_cara = dx.
+            // B. Convective term: -[m_e*u_e - m_w*u_w + m_n*u_n - m_s*u_s]
+            // Note: the mass flux m_e is (rho * u_e * face_area). face_area = dx.
             double conv_x = -rho * dx * (u_e*u_e - u_w*u_w + v_n*u_n - v_s*u_s);
 
-            // C. Terme Difusiu: mu * [ (u_E - u_P)/dx * A_e ... ]
-            // Com que A_e = dx i la distància és dx, ens queda la clàssica creu de diferències finites:
+            // C. Diffusive term: mu * [ (u_E - u_P)/dx * A_e ... ]
+            // Since A_e = dx and the distance is dx, this reduces to the classic
+            // finite-difference cross stencil:
             double diff_x = mu * (u[i+1][j] + u[i-1][j] + u[i][j+1] + u[i][j-1] - 4.0 * u[i][j]);
 
-            // D. Operador Total R(u)
+            // D. Total operator R(u)
             double R_u = conv_x + diff_x;
 
-            // E. Integració temporal explícita (Euler)
+            // E. Explicit time integration (Euler)
             u_p[i][j] = u[i][j] + (dt / (rho * dVol)) * R_u;
         }
     }
 
     // ---------------------------------------------------------
-    // 2. Malla Staggered-Y (Eix vertical, velocitat V)
+    // 2. Staggered-Y mesh (vertical axis, velocity V)
     // ---------------------------------------------------------
-    // Comencem en j=2 perquè v[i][1] és la paret inferior (terra)
+    // Start at j=2 because v[i][1] is the bottom wall (floor)
     for (int i = 1; i <= N; ++i) {
         for (int j = 2; j <= M; ++j) {
 
-            // A. Interpolació a les cares (CDS)
+            // A. Interpolation to the faces (CDS)
             double v_e = 0.5 * (v[i+1][j] + v[i][j]);
             double v_w = 0.5 * (v[i-1][j] + v[i][j]);
             double v_n = 0.5 * (v[i][j+1] + v[i][j]);
             double v_s = 0.5 * (v[i][j-1] + v[i][j]);
 
-            // EL TRENCACLOSQUES INVERTIT: Velocitat U a les cares Est/Oest de V
+            // THE TRICKY PART, REVERSED: velocity U on the East/West faces of V
             double u_e = 0.5 * (u[i+1][j] + u[i+1][j-1]);
             double u_w = 0.5 * (u[i][j]   + u[i][j-1]);
 
-            // B. Terme Convectiu
+            // B. Convective term
             double conv_y = -rho * dx * (u_e*v_e - u_w*v_w + v_n*v_n - v_s*v_s);
 
-            // C. Terme Difusiu
+            // C. Diffusive term
             double diff_y = mu * (v[i+1][j] + v[i-1][j] + v[i][j+1] + v[i][j-1] - 4.0 * v[i][j]);
 
-            // D. Operador Total R(v)
+            // D. Total operator R(v)
             double R_v = conv_y + diff_y;
 
-            // E. Integració temporal
+            // E. Time integration
             v_p[i][j] = v[i][j] + (dt / (rho * dVol)) * R_v;
         }
     }
 }
 
 // =========================================================
-// FUNCIÓ: RESOLDRE PRESSIÓ (Pas 3 - Eq. de Poisson amb Gauss-Seidel)
+// FUNCTION: SOLVE PRESSURE (step 3 - Poisson equation with Gauss-Seidel)
 // =========================================================
-void resoldre_pressio(int N, int M, double dx, double dt, double rho, double Tol,
-                      const vector<vector<double>>& u_p,
-                      const vector<vector<double>>& v_p,
-                      vector<vector<double>>& P) {
+void solve_pressure(int N, int M, double dx, double dt, double rho, double Tol,
+                    const vector<vector<double>>& u_p,
+                    const vector<vector<double>>& v_p,
+                    vector<vector<double>>& P) {
 
-    // Matriu per guardar el terme font b_P (la divergència)
-    auto b_P = crearMatriu(N, M);
+    // Matrix holding the source term b_P (the divergence)
+    auto b_P = create_matrix(N, M);
 
     // ---------------------------------------------------------
-    // 1. Calcular els coeficients de la malla (Uniforme dx=dy)
+    // 1. Mesh coefficients (uniform, dx=dy)
     // ---------------------------------------------------------
-    // a_E = Area_Est / distancia_E = dx / dx = 1.0; (el mateix per tots)
+    // a_E = East_area / distance_E = dx / dx = 1.0; (same for all of them)
     double a_E = 1.0;
     double a_W = 1.0;
     double a_N = 1.0;
     double a_S = 1.0;
 
     // ---------------------------------------------------------
-    // 2. Calcular el Terme Font b_P (Divergència de u_p, v_p)
+    // 2. Source term b_P (divergence of u_p, v_p)
     // ---------------------------------------------------------
-    double factor = rho / dt; // Nota: el document divideix per dt i posa -1,
-                              // ho agrupem tot per coincidir amb l'eq matricial.
+    double factor = rho / dt; // Note: the derivation divides by dt with a -1 sign;
+                              // both are grouped here to match the matrix equation.
 
     for(int i = 1; i <= N; ++i) {
         for(int j = 1; j <= M; ++j) {
-            // Com estem en malla staggered, les velocitats a les cares són directament les de les matrius
-            double u_est  = u_p[i+1][j];
-            double u_oest = u_p[i][j];
-            double v_nord = v_p[i][j+1];
-            double v_sud  = v_p[i][j];
+            // On a staggered mesh the face velocities are read directly from the matrices
+            double u_east  = u_p[i+1][j];
+            double u_west  = u_p[i][j];
+            double v_north = v_p[i][j+1];
+            double v_south = v_p[i][j];
 
-            // Flux màssic net que "crea" la cel·la (per això és negatiu a la teoria)
-            // b_P = -(1/dt) * [ (rho*u_e)*Area ... ] -> Amb dVol simplificat:
-            b_P[i][j] = -factor * dx * (u_est - u_oest + v_nord - v_sud);
+            // Net mass flux "created" by the cell (hence the negative sign in the theory)
+            // b_P = -(1/dt) * [ (rho*u_e)*Area ... ] -> with dVol simplified:
+            b_P[i][j] = -factor * dx * (u_east - u_west + v_north - v_south);
         }
     }
 
     // ---------------------------------------------------------
-    // 3. SOLVER ITERATIU DE GAUSS-SEIDEL
+    // 3. ITERATIVE GAUSS-SEIDEL SOLVER
     // ---------------------------------------------------------
     double error = 1.0;
     int iter = 0;
@@ -186,21 +193,21 @@ void resoldre_pressio(int N, int M, double dx, double dt, double rho, double Tol
         for(int i = 1; i <= N; ++i) {
             for(int j = 1; j <= M; ++j) {
 
-                // --- Inicialitzar coeficients per aquest node ---
+                // --- Initialise the coefficients for this node ---
                 double aE_node = a_E; double aW_node = a_W;
                 double aN_node = a_N; double aS_node = a_S;
 
-                // --- Aplicar Condicions de Contorn (dp/dn = 0)
-                // Si estem tocant una paret, anul·lem el coeficient veí cap a la paret.
-                if (i == 1) aW_node = 0.0; // Paret Esquerra
-                if (i == N) aE_node = 0.0; // Paret Dreta
-                if (j == 1) aS_node = 0.0; // Paret Inferior
-                if (j == M) aN_node = 0.0; // Paret Superior
+                // --- Apply the boundary conditions (dp/dn = 0)
+                // At a wall, the neighbour coefficient towards the wall is set to zero.
+                if (i == 1) aW_node = 0.0; // Left wall
+                if (i == N) aE_node = 0.0; // Right wall
+                if (j == 1) aS_node = 0.0; // Bottom wall
+                if (j == M) aN_node = 0.0; // Top wall
 
-                // El coeficient central és sempre la suma dels veïns ACTIUS
+                // The central coefficient is always the sum of the ACTIVE neighbours
                 double aP_node = aE_node + aW_node + aN_node + aS_node;
 
-                // --- Equació de Gauss-Seidel [cite: 242] ---
+                // --- Gauss-Seidel update ---
                 // a_P * P_P = a_E * P_E + a_W * P_W + a_N * P_N + a_S * P_S + b_P
                 double P_new = (aE_node * P[i+1][j] +
                                 aW_node * P[i-1][j] +
@@ -208,28 +215,28 @@ void resoldre_pressio(int N, int M, double dx, double dt, double rho, double Tol
                                 aS_node * P[i][j-1] +
                                 b_P[i][j]) / aP_node;
 
-                // Calcular l'error màxim de tota la malla per saber si hem acabat
+                // Track the maximum error over the whole mesh to decide when to stop
                 double diff = abs(P_new - P[i][j]);
                 if (diff > error) {
                     error = diff;
                 }
 
-                // Actualitzar el valor de la pressió IMEDIATAMENT (això és Gauss-Seidel)
+                // Update the pressure IMMEDIATELY (this is what makes it Gauss-Seidel)
                 P[i][j] = P_new;
             }
         }
 
-        // --- Condició de Referència per a la Pressió ---
-        // Com totes les parets tenen dp/dn=0, hi ha infinites solucions.
-        // Fixem un node central a 0.0 per "clavar" la pressió.
+        // --- Pressure reference condition ---
+        // Since every wall has dp/dn=0, there are infinitely many solutions.
+        // A central node is fixed to 0.0 to "pin" the pressure.
         double P_ref = P[N/2][M/2];
         for(int i = 1; i <= N; ++i) {
             for(int j = 1; j <= M; ++j) {
-                P[i][j] = P[i][j] - P_ref; // Desplacem tota la matriu perquè el centre valgui 0
+                P[i][j] = P[i][j] - P_ref; // Shift the whole field so the centre is 0
             }
         }
 
-        // --- Actualitzar les ghost cells per complir dp/dn=0 a fora del bucle iteratiu ---
+        // --- Update the ghost cells to satisfy dp/dn=0 outside the iterative sweep ---
         for(int j = 1; j <= M; ++j) {
             P[0][j]   = P[1][j];
             P[N+1][j] = P[N][j];
@@ -242,27 +249,27 @@ void resoldre_pressio(int N, int M, double dx, double dt, double rho, double Tol
         iter++;
     }
 
-    cout << "Gauss-Seidel convergit en " << iter << " iteracions. Error: " << error << endl;
+    cout << "Gauss-Seidel converged in " << iter << " iterations. Error: " << error << endl;
 }
 
 // =========================================================
-// FUNCIÓ: CORREGIR VELOCITATS (Pas 4)
+// FUNCTION: CORRECT VELOCITIES (step 4)
 // =========================================================
-void corregir_velocitats(int N, int M, double dx, double dt, double rho,
-                         const vector<vector<double>>& u_p,
-                         const vector<vector<double>>& v_p,
-                         const vector<vector<double>>& P,
-                         vector<vector<double>>& u,
-                         vector<vector<double>>& v) {
+void correct_velocities(int N, int M, double dx, double dt, double rho,
+                        const vector<vector<double>>& u_p,
+                        const vector<vector<double>>& v_p,
+                        const vector<vector<double>>& P,
+                        vector<vector<double>>& u,
+                        vector<vector<double>>& v) {
 
-    // Corregir Velocitat U (Malla Staggered-X)
+    // Correct velocity U (staggered-X mesh)
     for (int i = 2; i <= N; ++i) {
         for (int j = 1; j <= M; ++j) {
             u[i][j] = u_p[i][j] - (dt / (rho * dx)) * (P[i][j] - P[i-1][j]);
         }
     }
 
-    // Corregir Velocitat V (Malla Staggered-Y)
+    // Correct velocity V (staggered-Y mesh)
     for (int i = 1; i <= N; ++i) {
         for (int j = 2; j <= M; ++j) {
             v[i][j] = v_p[i][j] - (dt / (rho * dx)) * (P[i][j] - P[i][j-1]);
@@ -271,17 +278,15 @@ void corregir_velocitats(int N, int M, double dx, double dt, double rho,
 }
 
 // =========================================================
-// FUNCIÓ: EXPORTAR RESULTATS A CSV
+// FUNCTION: EXPORT RESULTS TO CSV
 // =========================================================
-#include <string> // Afegeix això a dalt de tot
+void export_results(int N, int M, double dx, double dy, double Re,
+                    const vector<vector<double>>& u,
+                    const vector<vector<double>>& v) {
 
-void exportar_resultats(int N, int M, double dx, double dy, double Re,
-                        const vector<vector<double>>& u,
-                        const vector<vector<double>>& v) {
-
-    // Creem un nom d'arxiu dinàmic, ex: "resultats_LDC_Re100.csv"
-    string nom_arxiu = "resultats_LDC_Re" + to_string((int)Re) + ".csv";
-    ofstream arxiu(nom_arxiu);
+    // Dynamic file name, e.g. "results_LDC_Re100.csv"
+    string filename = "results_LDC_Re" + to_string((int)Re) + ".csv";
+    ofstream file(filename);
 
     for (int i = 1; i <= N; ++i) {
         for (int j = 1; j <= M; ++j) {
@@ -289,48 +294,48 @@ void exportar_resultats(int N, int M, double dx, double dy, double Re,
             double y_pos = (j - 0.5) * dy;
             double u_centre = 0.5 * (u[i][j] + u[i+1][j]);
             double v_centre = 0.5 * (v[i][j] + v[i][j+1]);
-            double magnitud = sqrt(u_centre*u_centre + v_centre*v_centre);
+            double magnitude = sqrt(u_centre*u_centre + v_centre*v_centre);
 
-            arxiu << x_pos << "," << y_pos << ","
-                  << u_centre << "," << v_centre << "," << magnitud << "\n";
+            file << x_pos << "," << y_pos << ","
+                 << u_centre << "," << v_centre << "," << magnitude << "\n";
         }
     }
-    arxiu.close();
-    cout << "Arxiu '" << nom_arxiu << "' generat!" << endl;
+    file.close();
+    cout << "File '" << filename << "' written!" << endl;
 }
 
 int main() {
     int N = 60; int M = 60; double L = 1.0; double dx = L / N;
     double U_ref = 1.0; double rho = 1.0;
 
-    // --- LLISTA DE REYNOLDS A SIMULAR ---
-    vector<double> llista_Re = {100.0, 400.0, 1000.0};
+    // --- LIST OF REYNOLDS NUMBERS TO SIMULATE ---
+    vector<double> re_list = {100.0, 400.0, 1000.0};
 
-    for (double Re : llista_Re) {
+    for (double Re : re_list) {
         cout << "\n=============================================" << endl;
-        cout << "INICIANT SIMULACIO PER Re = " << Re << endl;
+        cout << "STARTING SIMULATION FOR Re = " << Re << endl;
         cout << "=============================================" << endl;
 
         double mu = (rho * U_ref * L) / Re;
 
-        // RE-INICIALITZAR TOT A ZERO PER A CADA REYNOLDS
-        auto u = crearMatriu(N, M); auto v = crearMatriu(N, M); auto P = crearMatriu(N, M);
-        auto u_p = crearMatriu(N, M); auto v_p = crearMatriu(N, M);
+        // RESET EVERYTHING TO ZERO FOR EACH REYNOLDS NUMBER
+        auto u = create_matrix(N, M); auto v = create_matrix(N, M); auto P = create_matrix(N, M);
+        auto u_p = create_matrix(N, M); auto v_p = create_matrix(N, M);
         auto u_old = u; auto v_old = v;
 
-        aplicar_condicions_contorno(N, M, U_ref, u, v, P);
+        apply_boundary_conditions(N, M, U_ref, u, v, P);
 
         double t = 0.0; double t_final = 50.0; double dt = 0.001;
-        double Tol_Presio = 1e-5; double Tol_Steady = 1e-6;
-        bool steady_state = false; int iteracio_global = 0;
+        double tol_pressure = 1e-5; double tol_steady = 1e-6;
+        bool steady_state = false; int global_iteration = 0;
 
         while (t < t_final && !steady_state) {
-            iteracio_global++;
+            global_iteration++;
 
-            calcular_velocitat_predictora(N, M, dx, dt, rho, mu, u, v, u_p, v_p);
-            resoldre_pressio(N, M, dx, dt, rho, Tol_Presio, u_p, v_p, P);
-            corregir_velocitats(N, M, dx, dt, rho, u_p, v_p, P, u, v);
-            aplicar_condicions_contorno(N, M, U_ref, u, v, P);
+            compute_predictor_velocity(N, M, dx, dt, rho, mu, u, v, u_p, v_p);
+            solve_pressure(N, M, dx, dt, rho, tol_pressure, u_p, v_p, P);
+            correct_velocities(N, M, dx, dt, rho, u_p, v_p, P, u, v);
+            apply_boundary_conditions(N, M, U_ref, u, v, P);
 
             double max_diff = 0.0; double max_vel = 0.0;
             for (int i = 1; i <= N; ++i) {
@@ -347,7 +352,7 @@ int main() {
                 }
             }
 
-            if (max_diff < Tol_Steady) steady_state = true;
+            if (max_diff < tol_steady) steady_state = true;
 
             double dt_c = 0.35 * dx / (max_vel + 1e-9);
             double dt_d = 0.20 * (dx * dx) / (mu / rho);
@@ -355,10 +360,10 @@ int main() {
             t += dt;
         }
 
-        cout << ">>> ESTAT ESTACIONARI (Re=" << Re << ") ASSOLIT A t = " << t << "s" << endl;
+        cout << ">>> STEADY STATE (Re=" << Re << ") REACHED AT t = " << t << "s" << endl;
 
-        // Exportem l'arxiu amb el Re al nom
-        exportar_resultats(N, M, dx, dx, Re, u, v);
+        // Export the file with Re in its name
+        export_results(N, M, dx, dx, Re, u, v);
     }
 
     return 0;

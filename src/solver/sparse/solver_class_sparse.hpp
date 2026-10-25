@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "../PressurePoissonSystem.hpp"
-// Definimos los alias para los tipos de datos
+// Type aliases for the data types
 using Vector = std::vector<double>;
 
 struct CSRMatrix {
@@ -33,22 +33,22 @@ struct CSRMatrix {
         return csr;
     }
 
-    // Añadir dentro de struct CSRMatrix
+    // Builds a CSR matrix from (row, col, value) triplets
 static CSRMatrix fromTriplets(int n, const std::vector<Triplet>& triplets) {
     CSRMatrix csr;
     csr.n = n;
     csr.row_ptr.assign(n + 1, 0);
     csr.diagonal.resize(n, 0.0);
 
-    // 1. Contar elementos por fila
+    // 1. Count the entries per row
     for (const auto& t : triplets) {
         if (t.value != 0.0) csr.row_ptr[t.row + 1]++;
     }
 
-    // 2. Acumular punteros de fila
+    // 2. Accumulate the row pointers
     for (int i = 0; i < n; ++i) csr.row_ptr[i + 1] += csr.row_ptr[i];
 
-    // 3. Llenar valores y columnas
+    // 3. Fill in values and columns
     csr.values.resize(csr.row_ptr[n]);
     csr.col_indices.resize(csr.row_ptr[n]);
     std::vector<int> current_pos = csr.row_ptr;
@@ -71,19 +71,19 @@ static CSRMatrix fromTriplets(int n, const std::vector<Triplet>& triplets) {
 // ---------------------------------------------------------------------------
 Vector multiply(const CSRMatrix& A, const Vector& v);   // y = A·x
 Vector subtract(const Vector& a, const Vector& b);       // a - b
-Vector adittion(const Vector& a, const Vector& b);       // a + b
+Vector addition(const Vector& a, const Vector& b);       // a + b
 double dot(const Vector& u, const Vector& v);            // u·v
 
-// --- CLASE BASE ---
+// --- BASE CLASS ---
 class LinearSolver {
 public:
     virtual ~LinearSolver() = default;
     
-    // Declaración de la función virtual pura
+    // Pure virtual solve function
     virtual Vector solve(const CSRMatrix& A, const Vector& b) const = 0;
 };
 
-// --- CLASES HEREDADAS ---
+// --- DERIVED CLASSES ---
 
 class GS : public LinearSolver {
 public:

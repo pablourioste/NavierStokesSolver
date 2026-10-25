@@ -91,8 +91,8 @@ static std::vector<int> read_reynolds_cases(const std::string& filename) {
         for (int re = 100; re <= 1000; re += 100) {
             cases.push_back(re);
         }
-        std::cout << "No se encontraron Reynolds en '" << filename
-                  << "'. Usando bateria por defecto: 100..1000 (paso 100)\n";
+        std::cout << "No Reynolds numbers found in '" << filename
+                  << "'. Using the default batch: 100..1000 (step 100)\n";
     }
     return cases;
 }
@@ -116,8 +116,8 @@ static std::vector<double> read_rayleigh_cases(const std::string& filename) {
     }
     if (cases.empty()) {
         cases = {1e3, 1e4, 1e5, 1e6};
-        std::cout << "No se encontraron Rayleigh en '" << filename
-                  << "'. Usando bateria por defecto: 1e3,1e4,1e5,1e6\n";
+        std::cout << "No Rayleigh numbers found in '" << filename
+                  << "'. Using the default batch: 1e3,1e4,1e5,1e6\n";
     }
     return cases;
 }
@@ -206,7 +206,7 @@ int main() {
     GS GS_solver;
     SOR SOR_solver;
 
-    // Simulation parameters (base from input/sim_params.txt):
+    // Simulation parameters (base from input/<scenario>/sim_params.txt):
     double U_lid     = myConfig.U_lid;
     double dt        = myConfig.dt;
     double rho       = myConfig.rho;
@@ -523,7 +523,7 @@ int main() {
         }
 
         // --- Ghia et al. (1982) reference — selected Re column ---
-        // Full tables: input/ghia_reference.txt
+        // Full tables: input/lid_driven_cavity/ghia_reference.txt
         // Re columns available: 100, 400, 1000, 3200, 5000, 7500, 10000
         const int ghia_re_list[]   = {100, 400, 1000, 3200, 5000, 7500, 10000};
         const int ghia_ncols       = 7;

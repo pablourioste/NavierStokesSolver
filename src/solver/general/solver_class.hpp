@@ -1,25 +1,25 @@
 #pragma once
 #include <vector>
 
-// Definimos los alias para los tipos de datos
+// Type aliases for the data types
 using Matrix = std::vector<std::vector<double>>;
 using Vector = std::vector<double>;
 
 
-// --- CLASE BASE ---
+// --- BASE CLASS ---
 class LinearSolver {
 public:
     virtual ~LinearSolver() = default;
     
-    // Declaración de la función virtual pura
+    // Pure virtual solve function
     virtual Vector solve(const Matrix& A, const Vector& b) const = 0;
 };
 
-// --- CLASES HEREDADAS ---
+// --- DERIVED CLASSES ---
 
 class GS : public LinearSolver {
 public:
-    // Solo declaramos que sobrescribiremos esta función, la implementaremos en el .cpp
+    // Overridden here, implemented in the .cpp
     Vector solve(const Matrix& A, const Vector& b) const override;
 };
 

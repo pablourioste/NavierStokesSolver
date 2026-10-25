@@ -36,7 +36,7 @@ classes, each owning one piece of the per-timestep pipeline.
   solenoidal flow field.
 - This ordering is also why the DHC extension (step 2 and step 4) never had
   to modify `MomentumSolver` or `PressurePoissonSystem` — see §5.
-- Driving loop: [src/main.cpp:225-271](../../src/main.cpp#L225-L271).
+- Driving loop: [src/main.cpp:360-427](../../src/main.cpp#L360-L427).
 
 ---
 
@@ -82,11 +82,11 @@ operators, each used by one or more solvers above:
 $u^* = u^n + \Delta t\,[\nu\nabla^2 u - (u\cdot\nabla)u]$ (and the `v`
 analogue).
 
-- **Construction** ([MomentumSolver.cpp:51](../../src/MomentumSolver.cpp#L51)):
+- **Construction** ([MomentumSolver.cpp:58](../../src/MomentumSolver.cpp#L58)):
   reads the wall boundary data once and derives the four ghost values used by
   every wall-adjacent stencil for the rest of the run
   (`u_ghost_north/south`, `v_ghost_west/east`) via `ghostValue`/`extractGhost`
-  ([MomentumSolver.cpp:28-50](../../src/MomentumSolver.cpp#L28-L50)). A
+  ([MomentumSolver.cpp:26-53](../../src/MomentumSolver.cpp#L26-L53)). A
   `DiffusionOperator` is constructed with these same ghosts and owned as a
   member, so the diffusive part of the stencil is never duplicated.
 - **Diffusion:** delegated entirely to `DiffusionOperator` (§1) — 2nd-order
@@ -96,11 +96,11 @@ analogue).
   `ConvectionScheme::CDS` (central, 2nd order, can oscillate at high cell
   Peclet number) or `ConvectionScheme::UPWIND` (1st order, more diffusive but
   unconditionally stable with respect to convection).
-- **`uRHS`/`vRHS`** ([MomentumSolver.cpp:119](../../src/MomentumSolver.cpp#L119),
-  [:195](../../src/MomentumSolver.cpp#L195)): compute diffusion − convection
+- **`uRHS`/`vRHS`** ([MomentumSolver.cpp:156](../../src/MomentumSolver.cpp#L156),
+  [:257](../../src/MomentumSolver.cpp#L257)): compute diffusion − convection
   at one interior node; only interior nodes are updated by `advance` —
   boundary nodes retain their prescribed values.
-- **Time advance** ([MomentumSolver.cpp:273](../../src/MomentumSolver.cpp#L273)):
+- **Time advance** ([MomentumSolver.cpp:359](../../src/MomentumSolver.cpp#L359)):
   Adams–Bashforth 2, falling back to Euler on the very first call (no
   previous-step RHS buffer yet) — see [equations.md §3](equations.md#3-time-integration).
 - **`applyBoundaryConditions`** must be called once before the first
@@ -144,8 +144,10 @@ poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
   integrates the predictor's divergence over each cell by outward-normal
   flux summation (FVM), reusing the same staggered index mapping as `mesh.md §2`:
   $$
-  b_P = \frac{\rho}{\Delta t}\Big[u^*_E S_e - u^*_W S_w + v^*_N S_n - v^*_S S_s\Big]
+  b_P = -\frac{\rho}{\Delta t}\Big[u^*_E S_e - u^*_W S_w + v^*_N S_n - v^*_S S_s\Big]
   $$
+  The minus sign matches the positive-definite matrix ($A\,p \approx -V\nabla^2 p$),
+  so $A\,p = b$ is the discrete form of $\nabla^2 p = (\rho/\Delta t)\,\nabla\cdot\mathbf{u}^*$.
 - **`projectVelocity`** ([PressurePoissonSystem.cpp:190](../../src/PressurePoissonSystem.cpp#L190)):
   applies the correction
   $u_{next} = u^* - (\Delta t/\rho)(p_E - p_W)/\text{dist}_{EW}$ (and the `v`
@@ -300,6 +302,47 @@ per-timestep pipeline in §0.
   surface-integrates pressure and viscous shear over the obstacle's 4 flat
   faces using the fluid-side cell values (never the solid cell's pinned,
   physically meaningless pressure) into `Cd`/`Cl`.
+
+---
+
+## 8. Possible extension: turbulence modelling (RANS / LES)
+
+The solver currently resolves laminar flow only. A natural extension is an
+eddy-viscosity turbulence model, either RANS (Spalart–Allmaras or $k$–$\omega$
+SST) or LES (Smagorinsky or dynamic Smagorinsky). Both replace the molecular
+viscosity with an effective one, $\nu_{\mathrm{eff}} = \nu + \nu_t$. The
+architecture already supports most of this:
+- The extra transported scalars of a RANS model ($\tilde\nu$, or $k$ and
+  $\omega$) are cell-centred like $\theta$, so they could reuse the
+  `EnergySolver` pattern of §5. That means upwind convection, ghost-cell walls
+  and AB2, added to the time loop without touching the pressure projection.
+- An LES model needs no extra transport equation: $\nu_t = (C_s\Delta)^2|\bar S|$
+  is computed from the resolved strain rate at each step.
+
+The main code change is in `DiffusionOperator`, which today assumes a
+constant scalar `nu_`. It would need a spatially varying $\nu_t$ interpolated
+to the staggered faces. It would also need the full stress divergence
+$\nabla\cdot[\nu_{\mathrm{eff}}(\nabla\mathbf{u}+\nabla\mathbf{u}^{\mathsf T})]$,
+because the transpose term no longer vanishes when the viscosity varies in
+space.
+
+Three numerical constraints follow from the current design (§6):
+- The fully explicit scheme ties the time step to
+  $\Delta x^2/\nu_{\mathrm{eff}}$, and $\nu_t$ is often orders of magnitude
+  larger than $\nu$. This makes implicit diffusion close to a prerequisite.
+- The stiff source and destruction terms of $k$–$\omega$ need a point-implicit
+  treatment to keep $k,\omega>0$.
+- Wall-resolved models require $y^+\lesssim 1$, which the existing `sinh`
+  stretching can provide, but the Laplacian is only first order on such grids
+  (see [mesh.md](mesh.md)). Spalart–Allmaras and SST also need the wall
+  distance field.
+
+Finally, LES is intrinsically three-dimensional: 2D turbulence has an inverse
+energy cascade, so a 2D LES is not physically meaningful. The realistic
+targets for this 2D code are therefore steady RANS and unsteady RANS (URANS).
+A good benchmark is the square cylinder at $Re = 22\,000$ (Lyn et al. 1995),
+which extends the existing Square Cylinder scenario. A genuine LES would
+require a spanwise direction, i.e. a 3D extension of the mesh and operators.
 
 ---
 

@@ -7,13 +7,13 @@
 #include <limits>  // Required for std::numeric_limits (obstacle bounds default)
 
 struct InternalCell {
-    int global_id; // El ID en el sistema lineal (0 a N_active-1)
-    double x, y;   // Centroide
-    double Vol;    // Volumen
-    // Vecinos (índices de otras InternalCells)
+    int global_id; // ID in the linear system (0 to N_active-1)
+    double x, y;   // Centroid
+    double Vol;    // Volume
+    // Neighbours (indices of other InternalCells)
     int n_east, n_west, n_north, n_south;
 
-    // Banderas para saber si un vecino es frontera
+    // Flags telling whether a neighbour is a boundary
     bool bc_east, bc_west, bc_north, bc_south;
 
     // True if this P-cell belongs to an immersed solid obstacle (e.g. the
@@ -21,7 +21,7 @@ struct InternalCell {
     // true for the Lid-Driven Cavity or Differentially Heated Cavity.
     bool is_solid = false;
 };
-// --- A. NUEVO ENUM PARA TIPOS DE FRONTERA ---
+// --- Boundary condition types ---
 enum BCType {
     WALL_ADIABATIC,
     WALL_FIXED_VALUE,
@@ -33,12 +33,12 @@ enum BCType {
 };
 
 struct BoundaryFace {
-    double x, y;         // Posición del centro de la cara
-    double Area;         // Área superficial
-    int neighbor_id;     // ID de la celda interna que toca esta frontera
+    double x, y;         // Position of the face centre
+    double Area;         // Surface area
+    int neighbor_id;     // ID of the internal cell touching this boundary
     BCType type = UNDEFINED;
-    double value = 0.0;  // Valor asociado a la condición (ej. velocidad de entrada)
-    std::string boco;    // Nombre del grupo de condición de contorno (boco)
+    double value = 0.0;  // Value associated with the condition (e.g. inlet velocity)
+    std::string boco;    // Name of the boundary-condition group (boco)
 };
 
 
@@ -46,29 +46,25 @@ struct GridData {
     std::vector<double> xvc, x, yvc, y;
     std::vector<std::vector<double>> V, Se, Sw, Sn, Ss;
 
-    // --- NUEVO: SISTEMA DE CONECTIVIDAD ---
-    
-    // Matriz de conectividad: [ID_Celda][Direccion]
-    // Direcciones: 0=East, 1=West, 2=North, 3=South
-    // Si el valor es -1, significa que es una frontera (boundary)
-    
-    // Matriz de conectividad: [ID_NODO][CARA] -> Devuelve el ID del vecino
+    // --- CONNECTIVITY ---
+
+    // Connectivity matrix: [cell_ID][direction] -> ID of the neighbour
+    // Directions: 0=East, 1=West, 2=North, 3=South
+    // A value of -1 means the face is a boundary
     std::vector<std::vector<int>> connectivity;
 
-    // Mapa inverso: Dado un ID, recuperamos sus i, j (útil para debug o post-proceso)
+    // Inverse map: given an ID, recover its i, j (useful for debugging or post-processing)
     std::vector<int> id_to_i;
     std::vector<int> id_to_j;
     
-    // Total de nodos activos
+    // Total number of active nodes
     int num_active_nodes;
 
-    // 1. Vector de Punteros: Cada nodo apunta a una condición. 
-    //    Si es nullptr, es un nodo interno (FLUIDO/DOMINIO).
-    // 2. ELEMENTOS INTERNOS (Los que tienen Volumen)
-    // Podemos almacenarlos en un vector 1D para el solver lineal
-    std::vector<InternalCell> cells; 
+    // INTERNAL ELEMENTS (the ones with a volume), stored in a 1D vector
+    // indexed like the unknowns of the linear solver
+    std::vector<InternalCell> cells;
 
-    // 3. SUPERFICIES DE FRONTERA (Los que son solo áreas)
+    // BOUNDARY SURFACES (area only, no volume)
     std::vector<BoundaryFace> bound_west;
     std::vector<BoundaryFace> bound_east;
     std::vector<BoundaryFace> bound_south;
@@ -83,11 +79,11 @@ struct GridData {
     std::vector<BoundaryFace> bound_south_T;
     std::vector<BoundaryFace> bound_north_T;
     
-    // Mapa auxiliar por si necesitas acceso rápido (opcional)
+    // Number of cells in x and y
     int N_cells_x, M_cells_y;
 
-    // 2. Vector de IDs (Enteros): Redundante pero necesario para VTK y Paraview
-    //    ya que Paraview no lee punteros de C++.
+    // Integer material IDs per node: redundant, but needed for VTK/ParaView
+    // output, since ParaView cannot read C++ pointers.
     std::vector<int> node_material_id;
 
     // --- Immersed solid obstacle (Square Cylinder scenario only) ---
@@ -104,7 +100,7 @@ struct GridData {
 class MeshConfig {
 public: 
     // --- CONSTRUCTOR ---
-    // Aquí declaramos que existe un constructor que se encargará de poner los valores
+    // Initialises every parameter to its default value
     MeshConfig(); 
 
     // --- Grid Dimensions (Parameters) ---
@@ -165,8 +161,8 @@ public:
     void export_mesh_to_gnuplot(const GridData& data, const std::string& filename) const;
     void export_mesh_to_VTK(const GridData& grid, const std::string& filename) const;
     /**
-     * @brief Genera la matriz de conectividad y los mapas de ID global.
-     * Debe llamarse DESPUÉS de generate_mesh().
+     * @brief Builds the connectivity matrix and the global-ID maps.
+     * Must be called AFTER generate_mesh().
      */
     void build_connectivity(GridData& data) const;
 
@@ -186,8 +182,8 @@ public:
     //void apply_boundary(GridData& data, BoundaryCondition* bc, 
                        // std::function<bool(int i, int j, double x, double y)> selector) const;
     
-    // Función auxiliar estática para convertir (i,j) a ID Global
-    // Útil si necesitas consultar un ID desde fuera
+    // Static helper converting (i,j) to a global ID
+    // Useful for looking up an ID from outside the class
     static int get_global_id(int i, int j, int N_cells_east_total);
 
     void inspect_mesh(const GridData& mesh) const;

@@ -36,7 +36,7 @@ case "$TARGET" in
     echo "=== Build only, nothing to run ==="
     ;;
   mesh_gen)
-    echo "=== Running mesh_gen (main solver: lid-driven cavity / DHC, per input/sim_params.txt) ==="
+    echo "=== Running mesh_gen (main solver: scenario selected by input/scenario.txt) ==="
     ./build/mesh_gen
     ;;
   verify)
@@ -44,7 +44,7 @@ case "$TARGET" in
     ./build/operator_verify
     ;;
   sweep)
-    echo "=== Running reynolds_sweep (batch sweep over input/reynolds_cases.txt) ==="
+    echo "=== Running reynolds_sweep (same driver as mesh_gen: sweeps the active scenario's reynolds_cases.txt / rayleigh_cases.txt) ==="
     ./build/reynolds_sweep
     ;;
   *)

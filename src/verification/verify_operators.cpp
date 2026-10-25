@@ -1,45 +1,45 @@
 // =============================================================================
 // verify_operators.cpp
 //
-// Verificación de los operadores discretos mediante el Método de Soluciones
-// Manufacturadas (MMS).
+// Verification of the discrete operators with the Method of Manufactured
+// Solutions (MMS).
 //
-// Para cada operador se elige una función analítica suave, se muestrea en la
-// malla, se aplica el operador discreto y se compara con el resultado analítico.
-// Se repite en mallas uniformes N = 8, 16, 32, 64 y se estima la tasa de
-// convergencia (esperada ≈ 2.0 para operadores de 2.º orden).
+// For each operator a smooth analytical function is chosen, sampled on the
+// mesh, the discrete operator is applied and the result is compared with the
+// analytical one. This is repeated on uniform meshes N = 8, 16, 32, 64 and the
+// convergence rate is estimated (expected ≈ 2.0 for 2nd-order operators).
 //
 // ---------------------------------------------------------------------------
-// CONVENCIÓN DE SIGNO DE LA MATRIZ LAPLACIANA
+// SIGN CONVENTION OF THE LAPLACIAN MATRIX
 // ---------------------------------------------------------------------------
-// El Laplaciano FVM ensambla la forma positivo-definida:
-//   diagonal    = +(a_E + a_W + a_N + a_S)
-//   fuera-diag  = −a_nb
+// The FVM Laplacian assembles the positive-definite form:
+//   diagonal      = +(a_E + a_W + a_N + a_S)
+//   off-diagonal  = −a_nb
 //
-// Por ello:   (A·φ)[k] = Σ a_nb*(φ_P − φ_nb) = −∫∇²φ dV ≈ −V·∇²φ
-// Luego:      (A·φ)[k] / V  ≈  −∇²φ
+// Hence:      (A·φ)[k] = Σ a_nb*(φ_P − φ_nb) = −∫∇²φ dV ≈ −V·∇²φ
+// Therefore:  (A·φ)[k] / V  ≈  −∇²φ
 //
-// Para φ = cos(πx)cos(πy): ∇²φ = −2π²cos(πx)cos(πy)
+// For φ = cos(πx)cos(πy): ∇²φ = −2π²cos(πx)cos(πy)
 //   ⟹  (A·φ)/V  ≈  +2π²cos(πx)cos(πy)
 //
 // ---------------------------------------------------------------------------
-// IDENTIDAD DISCRETA D·G = −L/V
+// DISCRETE IDENTITY D·G = −L/V
 // ---------------------------------------------------------------------------
 // GradientOperator  G : P → (U,V)  eval   ∂p/∂x, ∂p/∂y
 // DivergenceOperator D : (U,V) → P  eval  ∫∇·u dV / V
 // LaplaceOperator    L : P → P       eval  ∫∫∇²p dV = −A·p
 //
-// Para celdas interiores y de frontera:
-//   D·(G·φ) = ∇²φ   y   L·φ/V = −∇²φ
-//   ⟹  D·G·φ + L·φ/V = 0   (precisión máquina)
+// For interior and boundary cells:
+//   D·(G·φ) = ∇²φ   and   L·φ/V = −∇²φ
+//   ⟹  D·G·φ + L·φ/V = 0   (machine precision)
 //
 // ---------------------------------------------------------------------------
-// MUESTREO EN POSICIONES DE CARA PARA U/V
+// SAMPLING U/V AT FACE POSITIONS
 // ---------------------------------------------------------------------------
-// Los nodos U de frontera (k=1, k=N+1) tienen su centroide en dx/4 (no en
-// la pared x=0). Para que la DivergenceOperator funcione correctamente el
-// campo debe ser muestreado en la posición de CARA: pMesh.xvc[k-1].
-// Para los nodos U interiores (k=2..N), centroide == cara (coinciden).
+// The boundary U nodes (k=1, k=N+1) have their centroid at dx/4 (not at the
+// wall x=0). For the DivergenceOperator test to work correctly the field must
+// be sampled at the FACE position: pMesh.xvc[k-1].
+// For interior U nodes (k=2..N), centroid == face (they coincide).
 // =============================================================================
 
 #include <cmath>
@@ -63,10 +63,10 @@
 static const double PI = std::acos(-1.0);
 
 // =============================================================================
-// Constructores de malla uniforme — sin archivos de entrada
+// Uniform mesh builders — no input files needed
 // =============================================================================
 
-// Construye la malla P uniforme N×M en [0,L]×[0,H].
+// Builds the uniform N×M P mesh on [0,L]×[0,H].
 static GridData makeUniformPMesh(int N, int M,
                                  double L = 1.0, double H = 1.0,
                                  double W = 0.1)
@@ -79,7 +79,7 @@ static GridData makeUniformPMesh(int N, int M,
     const double dx = L / N;
     const double dy = H / M;
 
-    // xvc[0]=0, xvc[1..N]=i*dx, xvc[N+1]=L (por tamaño; último es la pared Este)
+    // xvc[0]=0, xvc[1..N]=i*dx, xvc[N+1]=L (for sizing; the last one is the East wall)
     g.xvc.resize(N + 2);
     for (int i = 0; i <= N; ++i) g.xvc[i] = i * dx;
     g.xvc[N + 1] = L;
@@ -88,7 +88,7 @@ static GridData makeUniformPMesh(int N, int M,
     for (int j = 0; j <= M; ++j) g.yvc[j] = j * dy;
     g.yvc[M + 1] = H;
 
-    // Centros de celda con celdas fantasma en 0 y N+1/M+1
+    // Cell centres, with ghost cells at 0 and N+1/M+1
     g.x.resize(N + 2);
     for (int i = 1; i <= N; ++i) g.x[i] = (i - 0.5) * dx;
     g.x[0]     = -0.5 * dx;
@@ -99,7 +99,7 @@ static GridData makeUniformPMesh(int N, int M,
     g.y[0]     = -0.5 * dy;
     g.y[M + 1] =  H + 0.5 * dy;
 
-    // Áreas de cara (arreglos 2D [0..N+1][0..M+1])
+    // Face areas (2D arrays [0..N+1][0..M+1])
     g.Se.assign(N + 2, std::vector<double>(M + 2, 0.0));
     g.Sw.assign(N + 2, std::vector<double>(M + 2, 0.0));
     g.Sn.assign(N + 2, std::vector<double>(M + 2, 0.0));
@@ -114,7 +114,7 @@ static GridData makeUniformPMesh(int N, int M,
         }
     }
 
-    // Celdas y conectividad
+    // Cells and connectivity
     g.cells.resize(N * M);
     g.id_to_i.resize(N * M);
     g.id_to_j.resize(N * M);
@@ -145,10 +145,10 @@ static GridData makeUniformPMesh(int N, int M,
     return g;
 }
 
-// Malla U escalonada (N+1)×M — misma lógica que MeshConfig::generate_u_mesh.
-// xvc_u[0]   = pMesh.xvc[0]  (pared Oeste)
-// xvc_u[k]   = pMesh.x[k]    para k=1..N  (centros de celda P)
-// xvc_u[N+1] = pMesh.xvc[N]  (pared Este)
+// Staggered (N+1)×M U mesh — same logic as MeshConfig::generate_u_mesh.
+// xvc_u[0]   = pMesh.xvc[0]  (West wall)
+// xvc_u[k]   = pMesh.x[k]    for k=1..N  (P cell centres)
+// xvc_u[N+1] = pMesh.xvc[N]  (East wall)
 static GridData makeUMesh(const GridData& p)
 {
     const int N = p.N_cells_x;
@@ -178,10 +178,10 @@ static GridData makeUMesh(const GridData& p)
     return u;
 }
 
-// Malla V escalonada N×(M+1).
-// yvc_v[0]   = pMesh.yvc[0]  (pared Sur)
-// yvc_v[l]   = pMesh.y[l]    para l=1..M  (centros de celda P)
-// yvc_v[M+1] = pMesh.yvc[M]  (pared Norte)
+// Staggered N×(M+1) V mesh.
+// yvc_v[0]   = pMesh.yvc[0]  (South wall)
+// yvc_v[l]   = pMesh.y[l]    for l=1..M  (P cell centres)
+// yvc_v[M+1] = pMesh.yvc[M]  (North wall)
 static GridData makeVMesh(const GridData& p)
 {
     const int N = p.N_cells_x;
@@ -212,7 +212,7 @@ static GridData makeVMesh(const GridData& p)
 }
 
 // =============================================================================
-// Métrica de error L∞ sobre vectores del mismo tamaño
+// L∞ error metric over two vectors of the same size
 // =============================================================================
 static double errorLinf(const Vector& computed, const Vector& exact)
 {
@@ -226,9 +226,9 @@ static double errorLinf(const Vector& computed, const Vector& exact)
 // Suite 1 — LaplaceOperator
 //
 // φ(x,y) = cos(πx)cos(πy)
-//   ∂φ/∂n = 0 en todas las paredes → Neumann homogéneo satisfecho ✓
+//   ∂φ/∂n = 0 on every wall → homogeneous Neumann satisfied ✓
 //   ∇²φ = −2π²cos(πx)cos(πy)
-//   (A·φ)/V ≈ −∇²φ = +2π²cos(πx)cos(πy)   (convención positivo-definida)
+//   (A·φ)/V ≈ −∇²φ = +2π²cos(πx)cos(πy)   (positive-definite convention)
 // =============================================================================
 static double runLaplace(int N)
 {
@@ -260,11 +260,10 @@ static double runLaplace(int N)
 // Suite 2 — GradientOperator
 //
 // φ(x,y) = cos(πx)cos(πy)
-//   ∂φ/∂x = −πsin(πx)cos(πy)  en nodos U interiores (cara entre P-celdas)
-//   ∂φ/∂y = −πcos(πx)sin(πy)  en nodos V interiores
+//   ∂φ/∂x = −πsin(πx)cos(πy)  at interior U nodes (face between P cells)
+//   ∂φ/∂y = −πcos(πx)sin(πy)  at interior V nodes
 //
-// Los nodos U interiores tienen centroide == cara de P, así que la comparación
-// es directa.
+// Interior U nodes have centroid == P face, so the comparison is direct.
 // =============================================================================
 static std::pair<double,double> runGradient(int N)
 {
@@ -273,7 +272,7 @@ static std::pair<double,double> runGradient(int N)
     const GridData vMesh = makeVMesh(pMesh);
     GradientOperator G(pMesh, uMesh, vMesh);
 
-    // Muestrear φ en centros P
+    // Sample φ at P centres
     Vector phi(pMesh.num_active_nodes);
     for (int k = 0; k < pMesh.num_active_nodes; ++k) {
         phi[k] = std::cos(PI * pMesh.cells[k].x)
@@ -283,12 +282,12 @@ static std::pair<double,double> runGradient(int N)
     Vector gu, gv;
     G.apply(phi, gu, gv);
 
-    // Extraer nodos U interiores (k=2..N) y comparar
+    // Extract the interior U nodes (k=2..N) and compare
     Vector gu_int, gu_ex, gv_int, gv_ex;
     for (int j = 1; j <= N; ++j) {
         for (int k = 2; k <= N; ++k) {
             const int id = (j - 1) * (N + 1) + (k - 1);
-            const double xu = uMesh.cells[id].x;  // centroide = cara
+            const double xu = uMesh.cells[id].x;  // centroid = face
             const double yu = uMesh.cells[id].y;
             gu_int.push_back(gu[id]);
             gu_ex .push_back(-PI * std::sin(PI * xu) * std::cos(PI * yu));
@@ -298,7 +297,7 @@ static std::pair<double,double> runGradient(int N)
         for (int i = 1; i <= N; ++i) {
             const int id = (l - 1) * N + (i - 1);
             const double xv = vMesh.cells[id].x;
-            const double yv = vMesh.cells[id].y;  // centroide = cara
+            const double yv = vMesh.cells[id].y;  // centroid = face
             gv_int.push_back(gv[id]);
             gv_ex .push_back(-PI * std::cos(PI * xv) * std::sin(PI * yv));
         }
@@ -313,10 +312,10 @@ static std::pair<double,double> runGradient(int N)
 // v(x,y) = cos(πx)sin(2πy)   →  ∂v/∂y = 2πcos(πx)cos(2πy)
 // ∇·(u,v) = 2πcos(2πx)cos(πy) + 2πcos(πx)cos(2πy)
 //
-// IMPORTANTE: se muestrea u en la POSICIÓN DE CARA x = pMesh.xvc[k-1] (no en
-// el centroide del nodo U de frontera, que está en dx/4).  Para nodos interiores
-// centroide == cara, así que no hay diferencia.  Para k=1 (pared Oeste): x=0.
-// Igualmente v se muestrea en y = pMesh.yvc[l-1].
+// IMPORTANT: u is sampled at the FACE POSITION x = pMesh.xvc[k-1] (not at the
+// centroid of the boundary U node, which sits at dx/4). For interior nodes
+// centroid == face, so there is no difference. For k=1 (West wall): x=0.
+// Likewise v is sampled at y = pMesh.yvc[l-1].
 // =============================================================================
 static double runDivergence(int N)
 {
@@ -325,28 +324,28 @@ static double runDivergence(int N)
     const GridData vMesh = makeVMesh(pMesh);
     DivergenceOperator D(pMesh, uMesh, vMesh);
 
-    // Muestrear u en posición de CARA: x_face = pMesh.xvc[k-1]
+    // Sample u at the FACE position: x_face = pMesh.xvc[k-1]
     Vector u(uMesh.num_active_nodes), v(vMesh.num_active_nodes);
     for (int j = 1; j <= N; ++j) {
         for (int k = 1; k <= N + 1; ++k) {
             const int id  = (j - 1) * (N + 1) + (k - 1);
-            const double xf = pMesh.xvc[k - 1];   // cara = pMesh.xvc[k-1]
-            const double yc = pMesh.y[j];           // y centro P = y centro U
+            const double xf = pMesh.xvc[k - 1];   // face = pMesh.xvc[k-1]
+            const double yc = pMesh.y[j];           // P-centre y = U-centre y
             u[id] = std::sin(2.0 * PI * xf) * std::cos(PI * yc);
         }
     }
     for (int l = 1; l <= N + 1; ++l) {
         for (int i = 1; i <= N; ++i) {
             const int id  = (l - 1) * N + (i - 1);
-            const double xc = pMesh.x[i];            // x centro P = x centro V
-            const double yf = pMesh.yvc[l - 1];      // cara = pMesh.yvc[l-1]
+            const double xc = pMesh.x[i];            // P-centre x = V-centre x
+            const double yf = pMesh.yvc[l - 1];      // face = pMesh.yvc[l-1]
             v[id] = std::cos(PI * xc) * std::sin(2.0 * PI * yf);
         }
     }
 
     const Vector div_h = D.apply(u, v);
 
-    // Comparar con ∇·(u,v) en centros de celda P
+    // Compare with ∇·(u,v) at P cell centres
     Vector exact(pMesh.num_active_nodes);
     for (int k = 0; k < pMesh.num_active_nodes; ++k) {
         const double xc = pMesh.cells[k].x;
@@ -360,16 +359,16 @@ static double runDivergence(int N)
 // =============================================================================
 // Suite 4 — DiffusionOperator
 //
-// u(x,y) = sin(πy)   (independiente de x  →  ∂²u/∂x²=0 exactamente)
+// u(x,y) = sin(πy)   (independent of x  →  ∂²u/∂x²=0 exactly)
 //   ν∇²u = ν·d²u/dy² = −νπ²sin(πy),   ν=1
 //
-// Al ser constante en x, la no-uniformidad del espaciado en x (debida al nodo
-// de frontera k=1 en dx/4 en lugar de x=0) no afecta al resultado.
-// El término en y usa el método imagen (celda fantasma) en j=1 y j=M, que
-// es de 2.º orden.
+// Since the field is constant in x, the non-uniform x spacing (caused by the
+// boundary node k=1 sitting at dx/4 instead of x=0) does not affect the result.
+// The y term uses the image method (ghost cell) at j=1 and j=M, which is
+// 2nd order.
 //
-// Nota: sin(πy)=0 en y=0 y y=1 → u_ghost = 2·0 − u_P = −u_P, que es el
-// valor exacto del campo en la celda espejo (sin(π·(−dy/2)) = −sin(π·dy/2) = −u_P). ✓
+// Note: sin(πy)=0 at y=0 and y=1 → u_ghost = 2·0 − u_P = −u_P, which is the
+// exact field value in the mirror cell (sin(π·(−dy/2)) = −sin(π·dy/2) = −u_P). ✓
 // =============================================================================
 static double runDiffusion(int N)
 {
@@ -378,12 +377,12 @@ static double runDiffusion(int N)
     const GridData vMesh = makeVMesh(pMesh);
 
     const double nu = 1.0;
-    // sin(πy)=0 en paredes Sur y Norte → ghost=0
+    // sin(πy)=0 on the South and North walls → ghost=0
     DiffusionOperator Diff(pMesh, uMesh, vMesh, nu,
                            /*u_ghost_N=*/0.0, /*u_ghost_S=*/0.0,
                            /*v_ghost_W=*/0.0, /*v_ghost_E=*/0.0);
 
-    // Muestrear u = sin(πy) en centros de nodos U
+    // Sample u = sin(πy) at U node centres
     Vector u(uMesh.num_active_nodes);
     for (int id = 0; id < uMesh.num_active_nodes; ++id) {
         u[id] = std::sin(PI * uMesh.cells[id].y);
@@ -392,8 +391,8 @@ static double runDiffusion(int N)
     Vector diff_u;
     Diff.applyU(u, diff_u);
 
-    // Comparar en nodos U interiores k=2..N, j=1..M
-    // (j=1 y j=M usan celda fantasma de 2.º orden ✓)
+    // Compare at interior U nodes k=2..N, j=1..M
+    // (j=1 and j=M use the 2nd-order ghost cell ✓)
     Vector computed, exact;
     for (int j = 1; j <= N; ++j) {
         for (int k = 2; k <= N; ++k) {
@@ -407,17 +406,17 @@ static double runDiffusion(int N)
 }
 
 // =============================================================================
-// Suite 5 — Identidad discreta D·G + L/V = 0
+// Suite 5 — Discrete identity D·G + L/V = 0
 //
-// Para cualquier campo φ y para TODAS las celdas (incluidas las de frontera):
-//   D·(G·φ)  +  (L·φ)/V  =  0   a precisión máquina
+// For any field φ and for ALL cells (boundary cells included):
+//   D·(G·φ)  +  (L·φ)/V  =  0   to machine precision
 //
-// Demostración para cara interior E de celda (i,j):
-//   Contribución de G·L al divergente: Se/V * (φ[i+1,j]−φ[i,j]) / (x[i+1]−x[i]) = +a_E/V*(φ_E−φ_P)
-//   Contribución de L/V:  [−a_E*(φ_E−φ_P) + ...] / V = −a_E/V*(φ_E−φ_P)
-//   Suma = 0 ✓
+// Proof for the interior East face of cell (i,j):
+//   Contribution of D·G:  Se/V * (φ[i+1,j]−φ[i,j]) / (x[i+1]−x[i]) = +a_E/V*(φ_E−φ_P)
+//   Contribution of L/V:  [−a_E*(φ_E−φ_P) + ...] / V = −a_E/V*(φ_E−φ_P)
+//   Sum = 0 ✓
 //
-// Para cara de frontera (bc=true): G devuelve 0 y L omite ese término → ambos = 0 ✓
+// For a boundary face (bc=true): G returns 0 and L omits that term → both = 0 ✓
 // =============================================================================
 static double runDGL(int N)
 {
@@ -429,7 +428,7 @@ static double runDGL(int N)
     GradientOperator   G(pMesh, uMesh, vMesh);
     DivergenceOperator D(pMesh, uMesh, vMesh);
 
-    // Campo φ = cos(πx)cos(πy) en centros P
+    // Field φ = cos(πx)cos(πy) at P centres
     Vector phi(pMesh.num_active_nodes);
     for (int k = 0; k < pMesh.num_active_nodes; ++k) {
         phi[k] = std::cos(PI * pMesh.cells[k].x)
@@ -450,7 +449,7 @@ static double runDGL(int N)
         LphiV[k] = Lphi[k] / pMesh.V[i][j];
     }
 
-    // D·G·φ + L·φ/V debe ser 0 (no D·G·φ - L·φ/V)
+    // D·G·φ + L·φ/V must be 0 (not D·G·φ - L·φ/V)
     Vector sum(pMesh.num_active_nodes);
     for (int k = 0; k < pMesh.num_active_nodes; ++k)
         sum[k] = DGphi[k] + LphiV[k];
@@ -460,7 +459,7 @@ static double runDGL(int N)
 }
 
 // =============================================================================
-// CSV helper — añade una fila a output/verification/data/convergence.csv
+// CSV helper — appends one row to output/verification/data/convergence.csv
 // =============================================================================
 static void csvRow(std::ofstream& f,
                    const std::string& suite, int N, double error,
@@ -475,13 +474,13 @@ static void csvRow(std::ofstream& f,
 // =============================================================================
 // Suite 6 — DiffusionOperator applyV
 //
-// v(x,y) = sin(πx)   (independiente de y  →  ∂²v/∂y²=0 exactamente)
+// v(x,y) = sin(πx)   (independent of y  →  ∂²v/∂y²=0 exactly)
 //   ν∇²v = ν·d²v/dx² = −νπ²sin(πx),   ν=1
 //
-// Las paredes Oeste (x=0) y Este (x=1) tienen v=0: sin(π·0)=sin(π·1)=0,
-// por eso v_ghost_W=0 y v_ghost_E=0 son consistentes con la función.
-// Los nodos V de contorno (l=1, l=M+1) son puestos a 0 por applyV y no
-// se incluyen en la comparación.
+// The West (x=0) and East (x=1) walls have v=0: sin(π·0)=sin(π·1)=0,
+// so v_ghost_W=0 and v_ghost_E=0 are consistent with the function.
+// The boundary V nodes (l=1, l=M+1) are set to 0 by applyV and are not
+// included in the comparison.
 // =============================================================================
 static double runDiffusionV(int N)
 {
@@ -494,7 +493,7 @@ static double runDiffusionV(int N)
                            /*u_ghost_N=*/0.0, /*u_ghost_S=*/0.0,
                            /*v_ghost_W=*/0.0, /*v_ghost_E=*/0.0);
 
-    // Muestrear v = sin(πx) en centros de nodos V
+    // Sample v = sin(πx) at V node centres
     Vector v(vMesh.num_active_nodes);
     for (int id = 0; id < vMesh.num_active_nodes; ++id)
         v[id] = std::sin(PI * vMesh.cells[id].x);
@@ -502,8 +501,8 @@ static double runDiffusionV(int N)
     Vector diff_v;
     Diff.applyV(v, diff_v);
 
-    // Comparar en nodos V interiores: l=2..M (todos los i=1..N)
-    // (i=1 e i=N usan celda fantasma — verifican la lógica O/E)
+    // Compare at interior V nodes: l=2..M (all i=1..N)
+    // (i=1 and i=N use the ghost cell — they check the W/E logic)
     Vector computed, exact;
     for (int l = 2; l <= N; ++l) {
         for (int i = 1; i <= N; ++i) {
@@ -517,16 +516,16 @@ static double runDiffusionV(int N)
 }
 
 // =============================================================================
-// Suite 7 — DiffusionOperator con condición de contorno no nula (tapa deslizante)
+// Suite 7 — DiffusionOperator with a non-zero boundary condition (moving lid)
 //
-// u(x,y) = y   (lineal en y  →  ∂²u/∂y²=0  →  ν∇²u=0 exactamente)
+// u(x,y) = y   (linear in y  →  ∂²u/∂y²=0  →  ν∇²u=0 exactly)
 //
-// Pared Sur:  u_wall=0  →  ghost = 2·0 − u_P = −u_P
-// Pared Norte: u_wall=1 →  ghost = 2·1 − u_P
+// South wall: u_wall=0  →  ghost = 2·0 − u_P = −u_P
+// North wall: u_wall=1  →  ghost = 2·1 − u_P
 //
-// Para un campo lineal, la diferencia de segundo orden cancela exactamente
-// (demostración analítica en OPERATORS_REPORT.md, Sección 4, Suite 7).
-// El error esperado es < 1e-12 a todas las N (cancelación algebraica, no O(h²)).
+// For a linear field the second-order difference cancels exactly
+// (analytical proof in docs/OPERATORS_REPORT.md, Section 4, Suite 7).
+// The expected error is < 1e-12 for every N (algebraic cancellation, not O(h²)).
 // =============================================================================
 static double runDiffusionLinear(int N)
 {
@@ -542,7 +541,7 @@ static double runDiffusionLinear(int N)
                            /*u_ghost_N=*/U_N, /*u_ghost_S=*/U_S,
                            /*v_ghost_W=*/0.0, /*v_ghost_E=*/0.0);
 
-    // Muestrear u = y en centros de nodos U
+    // Sample u = y at U node centres
     Vector u(uMesh.num_active_nodes);
     for (int id = 0; id < uMesh.num_active_nodes; ++id)
         u[id] = uMesh.cells[id].y;
@@ -550,8 +549,8 @@ static double runDiffusionLinear(int N)
     Vector diff_u;
     Diff.applyU(u, diff_u);
 
-    // Comparar en nodos U interiores k=2..N, todos j
-    // Resultado exacto es 0 para campo lineal
+    // Compare at interior U nodes k=2..N, all j
+    // The exact result is 0 for a linear field
     Vector computed, exact_zero;
     for (int j = 1; j <= N; ++j) {
         for (int k = 2; k <= N; ++k) {
@@ -564,15 +563,15 @@ static double runDiffusionLinear(int N)
 }
 
 // =============================================================================
-// Suite 8 — Adjunto discreto: Gᵀ = −D  (precisión máquina)
+// Suite 8 — Discrete adjoint: Gᵀ = −D  (machine precision)
 //
-// Propiedad de simetría-preservación:
-//   φᵀ·(D·u)  +  (G·φ)ᵀ·u  =  0   ∀ φ∈P, u∈U (nodos int.)
+// Symmetry-preserving property:
+//   φᵀ·(D·u)  +  (G·φ)ᵀ·u  =  0   ∀ φ∈P, u∈U (interior nodes)
 //
-// Es la forma discreta de la identidad de integración por partes:
-//   ∫(∇·u)φ dV + ∫u·∇φ dV = ∮φu·n dS = 0   (con u·n=0 en paredes)
+// This is the discrete form of the integration-by-parts identity:
+//   ∫(∇·u)φ dV + ∫u·∇φ dV = ∮φu·n dS = 0   (with u·n=0 on the walls)
 //
-// Se repite para el componente v.  Error esperado: ~1e-13.
+// Repeated for the v component.  Expected error: ~1e-13.
 // =============================================================================
 static double runAdjoint(int N)
 {
@@ -583,39 +582,39 @@ static double runAdjoint(int N)
     GradientOperator   G(pMesh, uMesh, vMesh);
     DivergenceOperator D(pMesh, uMesh, vMesh);
 
-    // Vectores aleatorios reproducibles (semilla fija)
+    // Reproducible random vectors (fixed seed)
     std::mt19937 rng(42);
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-    // Campo φ en P (cualquier valor)
+    // Field φ on P (any values)
     Vector phi(pMesh.num_active_nodes);
     for (auto& v : phi) v = dist(rng);
 
-    // Campo u en U — nodos de frontera (k=1, k=N+1) a cero para anular el
-    // término de contorno en la identidad de integración por partes
+    // Field u on U — boundary nodes (k=1, k=N+1) set to zero so that the
+    // boundary term of the integration-by-parts identity vanishes
     Vector u_vec(uMesh.num_active_nodes, 0.0);
     const int Np1 = N + 1;
     for (int j = 1; j <= N; ++j)
         for (int k = 2; k <= N; ++k)
             u_vec[(j - 1) * Np1 + (k - 1)] = dist(rng);
 
-    // Campo v en V — nodos de frontera (l=1, l=M+1) a cero
+    // Field v on V — boundary nodes (l=1, l=M+1) set to zero
     Vector v_vec(vMesh.num_active_nodes, 0.0);
     for (int l = 2; l <= N; ++l)
         for (int i = 1; i <= N; ++i)
             v_vec[(l - 1) * N + (i - 1)] = dist(rng);
 
-    // φᵀ·(D·u) — D.apply() devuelve flux/V, por lo que el producto
-    // sin ponderación de volumen es equivalente al producto en el espacio P puro.
-    // La identidad D^T = -G se verifica en la norma no ponderada:
+    // φᵀ·(D·u) — D.apply() returns flux/V, so the product without volume
+    // weighting is equivalent to the product in the pure P space.
+    // The identity D^T = -G is checked in the unweighted norm:
     //   φᵀ·(D·u) + (G·φ)ᵀ·u = 0
     const Vector Du = D.apply(u_vec, v_vec);
     double phiDu = 0.0;
     for (int k = 0; k < pMesh.num_active_nodes; ++k) {
-        phiDu += phi[k] * Du[k];  // sin ponderación: D ya divide por V internamente
+        phiDu += phi[k] * Du[k];  // unweighted: D already divides by V internally
     }
 
-    // (G·φ)ᵀ·u — gradiente de φ sobre nodos U/V interiores
+    // (G·φ)ᵀ·u — gradient of φ on interior U/V nodes
     Vector gu, gv;
     G.apply(phi, gu, gv);
     double Gphi_u = 0.0;
@@ -630,12 +629,12 @@ static double runAdjoint(int N)
 }
 
 // =============================================================================
-// Suite 9 — LaplaceOperator: simetría y definición positiva
+// Suite 9 — LaplaceOperator: symmetry and positive definiteness
 //
-// Test A (simetría):  |φᵀ·(A·ψ) − ψᵀ·(A·φ)| < ε_maquina
-// Test B (def. pos.): φᵀ·A·φ > 0  para φ aleatorio no nulo
+// Test A (symmetry):  |φᵀ·(A·ψ) − ψᵀ·(A·φ)| < ε_machine
+// Test B (pos. def.): φᵀ·A·φ > 0  for a random non-zero φ
 //
-// Retorna el error de simetría (Test A); la definición positiva se imprime.
+// Returns the symmetry error (Test A) and the quadratic form (Test B).
 // =============================================================================
 static std::pair<double, double> runSPD(int N)
 {
@@ -660,8 +659,8 @@ static std::pair<double, double> runSPD(int N)
     }
     const double sym_err = std::abs(phiApsi - psiAphi);
 
-    // Test B: φᵀ·Aφ  (pinear referencia para eliminar modo nulo cte.)
-    // Fijamos phi[0]=0 para que la constante no contribuya
+    // Test B: φᵀ·Aφ  (pin a reference value to remove the constant null mode)
+    // Set phi[0]=0 so that the constant does not contribute
     Vector phi2 = phi;
     phi2[0] = 0.0;
     const Vector Aphi2 = L.apply(phi2);
@@ -673,22 +672,22 @@ static std::pair<double, double> runSPD(int N)
 }
 
 // =============================================================================
-// Suite 10 — LaplaceOperator en malla estirada (tanh, γ=2)
+// Suite 10 — LaplaceOperator on a stretched mesh (tanh, γ=2)
 //
-// Misma función manufacturada que Suite 1: φ=cos(πx)cos(πy)
-// Malla generada con la transformación hiperbólica-tangente del artículo:
+// Same manufactured function as Suite 1: φ=cos(πx)cos(πy)
+// Mesh generated with the hyperbolic-tangent mapping:
 //   x_map = 1/2 · (1 + tanh(γ·(2ξ−1)) / tanh(γ)),  γ=2
 //
-// NOTA sobre convergencia:
-// El operador FVM usa a_E = Se / (x[i+1] − x[i]) donde x[i] son centros de celda.
-// En mallas no uniformes (h_e ≠ h_w), el término cruzado φ'·(h_e − h_w)/dx_i
-// introduce un error LOCAL de orden O(1/N) (primer orden), ya que:
-//   h_e − h_w = f''(ξ)/N² + O(N⁻³)   y   dx_i = f'(ξ)/N + O(N⁻²)
+// NOTE on convergence:
+// The FVM operator uses a_E = Se / (x[i+1] − x[i]) where x[i] are cell centres.
+// On non-uniform meshes (h_e ≠ h_w), the cross term φ'·(h_e − h_w)/dx_i
+// introduces a LOCAL error of order O(1/N) (first order), since:
+//   h_e − h_w = f''(ξ)/N² + O(N⁻³)   and   dx_i = f'(ξ)/N + O(N⁻²)
 //   → error = φ'·f''(ξ)/(f'(ξ)·N) = O(1/N)
 //
-// Con el factor correcto 2/(h_e + h_w) el esquema recuperaría orden 2.
-// Este test expone la limitación del estencil actual sobre mallas estiradas.
-// Tasa esperada: ~1.0
+// With the correct factor 2/(h_e + h_w) the scheme would recover 2nd order.
+// This test exposes the limitation of the current stencil on stretched meshes.
+// Expected rate: ~1.0
 // =============================================================================
 static GridData makeStretchedPMesh(int N, int M,
                                    double L = 1.0, double H = 1.0,
@@ -701,7 +700,7 @@ static GridData makeStretchedPMesh(int N, int M,
 
     const double tg = std::tanh(gamma);
 
-    // Posiciones de cara en x (0..N) con estiramiento tanh
+    // Face positions in x (0..N) with tanh stretching
     auto mapX = [&](double xi) {
         return 0.5 * L * (1.0 + std::tanh(gamma * (2.0 * xi - 1.0)) / tg);
     };
@@ -717,7 +716,7 @@ static GridData makeStretchedPMesh(int N, int M,
     for (int j = 0; j <= M; ++j) g.yvc[j] = mapY(static_cast<double>(j) / M);
     g.yvc[M + 1] = H;
 
-    // Centros de celda (promedio de caras)
+    // Cell centres (average of the faces)
     g.x.resize(N + 2);
     for (int i = 1; i <= N; ++i) g.x[i] = 0.5 * (g.xvc[i - 1] + g.xvc[i]);
     g.x[0]     = 2.0 * g.xvc[0] - g.x[1];
@@ -728,7 +727,7 @@ static GridData makeStretchedPMesh(int N, int M,
     g.y[0]     = 2.0 * g.yvc[0] - g.y[1];
     g.y[M + 1] = 2.0 * g.yvc[M] - g.y[M];
 
-    // Áreas y volúmenes
+    // Areas and volumes
     g.Se.assign(N + 2, std::vector<double>(M + 2, 0.0));
     g.Sw.assign(N + 2, std::vector<double>(M + 2, 0.0));
     g.Sn.assign(N + 2, std::vector<double>(M + 2, 0.0));
@@ -745,7 +744,7 @@ static GridData makeStretchedPMesh(int N, int M,
         }
     }
 
-    // Celdas y conectividad
+    // Cells and connectivity
     g.cells.resize(N * M);
     g.id_to_i.resize(N * M);
     g.id_to_j.resize(N * M);
@@ -798,15 +797,15 @@ static double runLaplaceStretched(int N)
 }
 
 // =============================================================================
-// main — ejecuta las 5 suites e imprime tablas de convergencia
+// main — runs the 10 suites and prints the convergence tables
 // =============================================================================
 int main()
 {
     const std::vector<int> sizes = { 8, 16, 32, 64 };
     const int W = 14;
 
-    // ---- Abrir CSV de salida ----
-    // Crear directorio output si no existe
+    // ---- Open the output CSV ----
+    // Create the output directory if it does not exist
     std::system("mkdir -p output");
     std::filesystem::create_directories("output/verification/data");
     std::ofstream csv("output/verification/data/convergence.csv");
@@ -822,11 +821,11 @@ int main()
 
     std::cout << std::fixed << std::setprecision(4);
 
-    // ---- Suite 1: Laplaciano ----
+    // ---- Suite 1: Laplacian ----
     std::cout << "\n=== Suite 1: LaplaceOperator  φ=cos(πx)cos(πy)  (A·φ)/V ≈ +2π²cos(πx)cos(πy) ===\n";
     std::cout << std::setw(6)  << "N"
               << std::setw(W)  << "Error L∞"
-              << std::setw(W)  << "Tasa\n";
+              << std::setw(W)  << "Rate\n";
     double prev1 = 0.0;
     for (int N : sizes) {
         const double e = runLaplace(N);
@@ -837,13 +836,13 @@ int main()
         prev1 = e;
     }
 
-    // ---- Suite 2: Gradiente ----
+    // ---- Suite 2: Gradient ----
     std::cout << "\n=== Suite 2: GradientOperator  φ=cos(πx)cos(πy) ===\n";
     std::cout << std::setw(6)    << "N"
               << std::setw(W+2)  << "Error ∂p/∂x"
-              << std::setw(W)    << "Tasa"
+              << std::setw(W)    << "Rate"
               << std::setw(W+2)  << "Error ∂p/∂y"
-              << std::setw(W)    << "Tasa\n";
+              << std::setw(W)    << "Rate\n";
     double prev_eu = 0.0, prev_ev = 0.0;
     for (int N : sizes) {
         auto [eu, ev] = runGradient(N);
@@ -858,12 +857,12 @@ int main()
         prev_ev = ev;
     }
 
-    // ---- Suite 3: Divergencia ----
+    // ---- Suite 3: Divergence ----
     std::cout << "\n=== Suite 3: DivergenceOperator  u=sin(2πx)cos(πy), v=cos(πx)sin(2πy) ===\n";
-    std::cout << "    (muestreo en posicion de cara: x=pMesh.xvc[k-1], y=pMesh.yvc[l-1])\n";
+    std::cout << "    (sampled at face positions: x=pMesh.xvc[k-1], y=pMesh.yvc[l-1])\n";
     std::cout << std::setw(6) << "N"
               << std::setw(W) << "Error L∞"
-              << std::setw(W) << "Tasa\n";
+              << std::setw(W) << "Rate\n";
     double prev3 = 0.0;
     for (int N : sizes) {
         const double e = runDivergence(N);
@@ -874,12 +873,12 @@ int main()
         prev3 = e;
     }
 
-    // ---- Suite 4: Difusión U ----
-    std::cout << "\n=== Suite 4: DiffusionOperator  u=sin(πy) [cte. en x], ν=1 ===\n";
-    std::cout << "    (la independencia en x elimina el error de 1er orden en nodos k=2, k=N)\n";
+    // ---- Suite 4: Diffusion U ----
+    std::cout << "\n=== Suite 4: DiffusionOperator  u=sin(πy) [const. in x], ν=1 ===\n";
+    std::cout << "    (independence of x removes the 1st-order error at nodes k=2, k=N)\n";
     std::cout << std::setw(6) << "N"
               << std::setw(W) << "Error L∞"
-              << std::setw(W) << "Tasa\n";
+              << std::setw(W) << "Rate\n";
     double prev4 = 0.0;
     for (int N : sizes) {
         const double e = runDiffusion(N);
@@ -890,8 +889,8 @@ int main()
         prev4 = e;
     }
 
-    // ---- Suite 5: Identidad D·G + L/V = 0 ----
-    std::cout << "\n=== Suite 5: Identidad D·G·φ + (L·φ)/V = 0  (precision maquina) ===\n";
+    // ---- Suite 5: Identity D·G + L/V = 0 ----
+    std::cout << "\n=== Suite 5: Identity D·G·φ + (L·φ)/V = 0  (machine precision) ===\n";
     std::cout << std::setw(6) << "N"
               << std::setw(W+2) << "max|D·G·φ + L·φ/V|\n";
     for (int N : sizes) {
@@ -901,18 +900,18 @@ int main()
         csvRow(csv, "DGL_identity", N, e);
     }
 
-    std::cout << "\nTasas esperadas: ~2.0 para Suites 1-4, ~1e-13 para Suite 5.\n";
+    std::cout << "\nExpected rates: ~2.0 for Suites 1-4, ~1e-13 for Suite 5.\n";
 
     // =========================================================================
-    // NUEVAS SUITES (6-10)
+    // ADDITIONAL SUITES (6-10)
     // =========================================================================
 
-    // ---- Suite 6: Difusión V ----
-    std::cout << "\n=== Suite 6: DiffusionOperator applyV  v=sin(πx) [cte. en y], ν=1 ===\n";
-    std::cout << "    (verifica celdas fantasma Oeste/Este, ruta v-component independiente)\n";
+    // ---- Suite 6: Diffusion V ----
+    std::cout << "\n=== Suite 6: DiffusionOperator applyV  v=sin(πx) [const. in y], ν=1 ===\n";
+    std::cout << "    (checks the West/East ghost cells, independent v-component path)\n";
     std::cout << std::setw(6) << "N"
               << std::setw(W) << "Error L∞"
-              << std::setw(W) << "Tasa\n";
+              << std::setw(W) << "Rate\n";
     double prev6 = 0.0;
     for (int N : sizes) {
         const double e = runDiffusionV(N);
@@ -923,9 +922,9 @@ int main()
         prev6 = e;
     }
 
-    // ---- Suite 7: Difusión con BC no nula (tapa deslizante) ----
-    std::cout << "\n=== Suite 7: DiffusionOperator u=y (lineal), u_N=1, u_S=0  →  ν∇²u = 0 exacto ===\n";
-    std::cout << "    (cancelación algebraica para campo lineal — error esperado < 1e-12)\n";
+    // ---- Suite 7: Diffusion with a non-zero BC (moving lid) ----
+    std::cout << "\n=== Suite 7: DiffusionOperator u=y (linear), u_N=1, u_S=0  →  ν∇²u = 0 exactly ===\n";
+    std::cout << "    (algebraic cancellation for a linear field — expected error < 1e-12)\n";
     std::cout << std::setw(6) << "N"
               << std::setw(W+2) << "max|applyU(y)|\n";
     for (int N : sizes) {
@@ -935,10 +934,10 @@ int main()
         csvRow(csv, "Diffusion_linear_BC", N, e);
     }
 
-    // ---- Suite 8: Adjunto Gᵀ = −D ----
-    std::cout << "\n=== Suite 8: Adjunto discreto  φᵀ·(D·u) + (G·φ)ᵀ·u = 0  (precision maquina) ===\n";
+    // ---- Suite 8: Adjoint Gᵀ = −D ----
+    std::cout << "\n=== Suite 8: Discrete adjoint  φᵀ·(D·u) + (G·φ)ᵀ·u = 0  (machine precision) ===\n";
     std::cout << std::setw(6) << "N"
-              << std::setw(W+2) << "Residuo adjunto\n";
+              << std::setw(W+2) << "Adjoint residual\n";
     for (int N : sizes) {
         const double e = runAdjoint(N);
         std::cout << std::setw(6) << N
@@ -946,10 +945,10 @@ int main()
         csvRow(csv, "Adjoint_GD", N, e);
     }
 
-    // ---- Suite 9: SPD de LaplaceOperator ----
-    std::cout << "\n=== Suite 9: LaplaceOperator SPD — simetría y definición positiva ===\n";
+    // ---- Suite 9: LaplaceOperator SPD ----
+    std::cout << "\n=== Suite 9: LaplaceOperator SPD — symmetry and positive definiteness ===\n";
     std::cout << std::setw(6) << "N"
-              << std::setw(W+2) << "Err simetría"
+              << std::setw(W+2) << "Symmetry err"
               << std::setw(W+2) << "φᵀAφ (>0?)\n";
     bool all_pd = true;
     for (int N : sizes) {
@@ -957,20 +956,20 @@ int main()
         std::cout << std::setw(6) << N
                   << std::setw(W+2) << std::scientific << sym
                   << std::setw(W+2) << std::scientific << quad;
-        if (quad <= 0.0) { std::cout << "  *** FALLO PD ***"; all_pd = false; }
+        if (quad <= 0.0) { std::cout << "  *** PD FAILURE ***"; all_pd = false; }
         std::cout << "\n";
         csvRow(csv, "SPD_symmetry", N, sym);
     }
     if (all_pd)
-        std::cout << "    Definición positiva: OK en todos los N.\n";
+        std::cout << "    Positive definiteness: OK for every N.\n";
 
-    // ---- Suite 10: Laplaciano en malla estirada ----
-    std::cout << "\n=== Suite 10: LaplaceOperator en malla tanh (γ=2)  φ=cos(πx)cos(πy) ===\n";
-    std::cout << "    (estencil a_E=Se/(x[i+1]-x[i]) es 1.er orden en malla no uniforme)\n";
-    std::cout << "    (tasa esperada ~1.0; para 2.º orden usar factor 2/(h_e+h_w))\n";
+    // ---- Suite 10: Laplacian on a stretched mesh ----
+    std::cout << "\n=== Suite 10: LaplaceOperator on a tanh mesh (γ=2)  φ=cos(πx)cos(πy) ===\n";
+    std::cout << "    (stencil a_E=Se/(x[i+1]-x[i]) is 1st order on a non-uniform mesh)\n";
+    std::cout << "    (expected rate ~1.0; for 2nd order use the factor 2/(h_e+h_w))\n";
     std::cout << std::setw(6)  << "N"
               << std::setw(W)  << "Error L∞"
-              << std::setw(W)  << "Tasa\n";
+              << std::setw(W)  << "Rate\n";
     double prev10 = 0.0;
     for (int N : sizes) {
         const double e = runLaplaceStretched(N);
@@ -981,9 +980,9 @@ int main()
         prev10 = e;
     }
 
-    std::cout << "\nTasas esperadas: ~2.0 para Suites 1-4, 6; ~1.0 para Suite 10 (malla no uniforme).\n";
-    std::cout << "Errores esperados < 1e-12: Suites 5, 7, 8, 9 (identidades algebraicas).\n";
-    std::cout << "\nDatos de convergencia escritos en: output/verification/data/convergence.csv\n";
+    std::cout << "\nExpected rates: ~2.0 for Suites 1-4, 6; ~1.0 for Suite 10 (non-uniform mesh).\n";
+    std::cout << "Expected errors < 1e-12: Suites 5, 7, 8, 9 (algebraic identities).\n";
+    std::cout << "\nConvergence data written to: output/verification/data/convergence.csv\n";
 
     return 0;
 }

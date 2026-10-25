@@ -6,40 +6,40 @@
 // =============================================================================
 // LaplaceOperator
 //
-// Discretiza el operador de Laplace  ∇²p  sobre la malla de presión P mediante
-// el método de volúmenes finitos (FVM).
+// Discretises the Laplace operator  ∇²p  on the pressure (P) mesh with the
+// finite-volume method (FVM).
 //
-// Para cada celda P con índices lógicos (i,j):
-//   a_E = Se[i][j] / (x[i+1] - x[i])      ← contribución cara Este
-//   a_W = Sw[i][j] / (x[i]   - x[i-1])    ← contribución cara Oeste
-//   a_N = Sn[i][j] / (y[j+1] - y[j])      ← contribución cara Norte
-//   a_S = Ss[i][j] / (y[j]   - y[j-1])    ← contribución cara Sur
-//   a_P = +(a_E + a_W + a_N + a_S)         ← diagonal (positivo)
+// For each P cell with logical indices (i,j):
+//   a_E = Se[i][j] / (x[i+1] - x[i])      ← East face contribution
+//   a_W = Sw[i][j] / (x[i]   - x[i-1])    ← West face contribution
+//   a_N = Sn[i][j] / (y[j+1] - y[j])      ← North face contribution
+//   a_S = Ss[i][j] / (y[j]   - y[j-1])    ← South face contribution
+//   a_P = +(a_E + a_W + a_N + a_S)         ← diagonal (positive)
 //
-// Condición de contorno Neumann homogénea (∂p/∂n = 0) por defecto: las caras
-// de frontera se ignoran (coeficiente = 0).
+// Homogeneous Neumann boundary condition (∂p/∂n = 0) by default: boundary
+// faces are skipped (coefficient = 0).
 //
-// La matriz resultante es SPD → apta para CG sin precondicionador.
-// Si todas las caras son Neumann el sistema es singular: usar pinReference().
+// The resulting matrix is SPD → suitable for CG without a preconditioner.
+// If every face is Neumann the system is singular: use pinReference().
 // =============================================================================
 class LaplaceOperator {
 public:
-    // pMesh debe sobrevivir a este objeto.
+    // pMesh must outlive this object.
     explicit LaplaceOperator(const GridData& pMesh);
 
-    // Construye la matriz Laplaciana esparcida A en formato de triplets.
-    // Equivale a PressurePoissonSystem::assembleMatrix().
+    // Builds the sparse Laplacian matrix A in triplet format.
+    // Equivalent to PressurePoissonSystem::assembleMatrix().
     std::vector<Triplet> assembleToTriplets() const;
 
-    // Construye la matriz en formato CSR directamente.
+    // Builds the matrix directly in CSR format.
     CSRMatrix assemble() const;
 
-    // Producto matriz-vector  y = A·p  (sin resolver el sistema).
-    // Útil para pruebas MMS: comparar (A·φ)/V con ∇²φ analítico.
+    // Matrix-vector product  y = A·p  (without solving the system).
+    // Useful for MMS tests: compare (A·φ)/V with the analytical ∇²φ.
     Vector apply(const Vector& p) const;
 
-    // Regularización para sistemas todo-Neumann: fija p[0] = 0.
-    // Igual que PressurePoissonSystem::pinReferencePressure().
+    // Regularisation for all-Neumann systems: fixes p[0] = 0.
+    // Same as PressurePoissonSystem::pinReferencePressure().
     void pinReference(std::vector<Triplet>& triplets, Vector& b) const;
 
 private:
