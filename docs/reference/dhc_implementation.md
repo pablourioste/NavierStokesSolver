@@ -1,5 +1,10 @@
 # Differentially Heated Cavity (DHC) — Implementation Documentation
 
+> Companion to the scenario page
+> [../scenarios/differentially_heated_cavity.md](../scenarios/differentially_heated_cavity.md),
+> which has the boundary conditions, settings and validation results. This
+> page traces the implementation.
+
 This guide explains, end to end, how the **Differentially Heated Cavity** (DHC)
 is implemented in the solver, which equations it solves, and **how information
 flows** from the input files → the mesh and its discretization (including
@@ -435,18 +440,20 @@ Outputs per case (in `output/differentially_heated_cavity/Ra_<value>/`):
 ## 9. CRITICAL stability warning
 
 Both energy and momentum are **fully explicit**, so the DHC needs a **much
-smaller** `dt` than the lid cavity. The explicit diffusion limit is:
+smaller** `dt` than the lid cavity. The explicit diffusion limit (AB2, 2D) is
 
 $$
-dt \lesssim \frac{\Delta x^2}{2\,\max(\alpha,\nu)}, \qquad \alpha = 1
+dt \lesssim \frac{h_{\min}^2}{8\,\max(\alpha,\nu)}, \qquad \alpha = 1,\ \nu = Pr
 $$
 
-On a production 150² mesh this means `dt ~ 1e-5` or less. Using `dt = 0.001` (the
-lid cavity default) **diverges to NaN** (CG fails to converge first). The current
-`sim_params.txt` is already set to `dt = 0.00001` for the DHC.
-
-> Verified at Ra=1e4 on a 40² mesh with `dt=2e-5`: `u_max≈16.7`, `v_max≈20.1`,
-> `Nu≈2.31` — matches de Vahl Davis (1983) within a few percent.
+Using `dt = 0.001` (the lid-cavity value) **diverges to NaN** (the CG solve
+fails to converge first). The shipped `sim_params.txt` has `dt = 1e-5`, which
+is still too large for the shipped 120×120 stretched grid
+($h_{\min} = 0.0056$, limit $3.9\times10^{-6}$) and diverges. The validated
+results used uniform 40×40 grids with `dt = 2e-5` ($Ra \leq 10^5$) and a
+uniform 100×100 grid with `dt = 2.5e-6` ($Ra = 10^6$); results and the exact
+commands are in
+[../scenarios/differentially_heated_cavity.md](../scenarios/differentially_heated_cavity.md).
 
 ---
 

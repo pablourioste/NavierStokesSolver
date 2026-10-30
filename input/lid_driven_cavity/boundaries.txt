@@ -1,6 +1,7 @@
 # =============================================================================
-# Condiciones de Contorno — Lid-Driven Cavity (LDC)
-# Formato: BOCO_NAME  CARA  IDX_START  IDX_END  TIPO              VALOR
+# Velocity boundary conditions — Lid-Driven Cavity (LDC)
+# See docs/theory/boundary_conditions.md for every type and its implementation.
+# Format: BOCO_NAME  FACE  IDX_START  IDX_END  TYPE              VALUE
 # =============================================================================
 lid           NORTH   0       9999     WALL_FIXED_VALUE   1.0
 wall_south    SOUTH   0       9999     WALL               0.0

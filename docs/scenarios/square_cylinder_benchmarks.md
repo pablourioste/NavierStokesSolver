@@ -1,27 +1,32 @@
-# Square Cylinder — Validation References and Plan
+# Square Cylinder — Benchmarks, Reference Data and Solver Changes
 
-This page collects the literature values against which the Square Cylinder
-scenario must be validated, states the exact configuration each reference
-uses, and lists what the solver must change to reproduce it. Every number
-below was checked against the cited source; where a value is only shown
-graphically in the original, that is said explicitly.
+Companion to [square_cylinder.md](square_cylinder.md). This page collects
+the literature values the Square Cylinder scenario is compared with, the
+exact configuration each reference uses, and the solver changes (including
+four bug fixes) that were needed to reproduce them. Every number below was
+checked against the cited source; where a value is only shown graphically in
+the original, that is said explicitly.
 
-## 1. Status
+**The results of the present solver** (tables and figures) are in
+[square_cylinder.md §8](square_cylinder.md#8-validation-results-square_cylinder_breuer).
 
-**Benchmark A (Breuer et al. 2000) is reproduced in the steady regime.** The
-validation set-up lives in its own scenario, `square_cylinder_breuer`
-(see §5); at $Re = 40$ the solver gives $C_D = 1.717$ and $L_r/D = 2.150$
-against 1.708 and 2.151, grid-independent to 0.1 % and 0.5 %
-respectively. Getting there required four solver fixes (§4). The unsteady
-cases ($Re = 50$–$100$) and Benchmark B are not yet validated.
+## Contents
+
+1. [Why a separate benchmark scenario](#1-why-a-separate-benchmark-scenario)
+2. [Benchmark A — confined cylinder, Breuer et al. (2000)](#2-benchmark-a--confined-cylinder-breuer-et-al-2000)
+3. [Benchmark B — quasi-unconfined cylinder, Sohankar et al. (1998)](#3-benchmark-b--quasi-unconfined-cylinder-sohankar-et-al-1998)
+4. [Solver changes made for the validation](#4-solver-changes-made-for-the-validation)
+5. [Sources](#sources)
+
+## 1. Why a separate benchmark scenario
 
 A reference value is only meaningful for the configuration it was computed
 in. Strouhal number and forces depend on the blockage $\beta = D/H$, on the
 inflow profile, on the side-wall condition and on the velocity used to define
-$Re$. The shipped `square_cylinder` scenario matches **neither** standard
+$Re$. The `square_cylinder` variant matches **neither** standard
 benchmark, which is why the validation uses a separate scenario:
 
-| | `square_cylinder` (shipped) | `square_cylinder_breuer` | Breuer et al. (2000) | Sohankar et al. (1998) |
+| | `square_cylinder` (variant) | `square_cylinder_breuer` | Breuer et al. (2000) | Sohankar et al. (1998) |
 |---|---|---|---|---|
 | Type | confined channel | confined channel | confined channel | quasi-unconfined |
 | Blockage $\beta = D/H$ | 1/8 | 1/8 | **1/8** | 5 % (and 2.5 %) |
@@ -32,7 +37,7 @@ benchmark, which is why the validation uses a separate scenario:
 | Cylinder → outlet | 18 $D$ | 37 $D$ ($L = 50D$) | 37 $D$ ($L = 50D$) | 10–26 $D$ |
 | Outlet condition | zero gradient | zero gradient | — | convective (or Neumann, $X_d = 26D$) |
 
-With a uniform inflow between no-slip walls (shipped scenario), the velocity
+With a uniform inflow between no-slip walls (`square_cylinder` variant), the velocity
 profile develops a boundary layer along the 6 $D$ before the cylinder, so
 the cylinder sees neither a uniform nor a parabolic stream and the effective
 Reynolds number is undefined.
@@ -105,7 +110,7 @@ experiments: Okajima (1982) $St = 0.14$–$0.144$ at $Re = 120$, Norberg
 | Parabolic inlet `INLET_PARABOLIC` (value = $U_{\max}$), per-face $u(y) = 4U_{\max}(y-y_0)(y_1-y)/H^2$ | done | `MeshConfig::define_boundaries`, [MeshGenerator.cpp](../../src/mesh/MeshGenerator.cpp) |
 | Scenario names `square_cylinder*` run the cylinder solver, so benchmark set-ups get their own `input/` and `output/` folders | done | [main.cpp](../../src/main.cpp) |
 | **Bug: viscous force components swapped.** Shear $\mu\,\partial v/\partial x$ on the front/rear faces was added to the drag and $\mu\,\partial u/\partial y$ on the top/bottom faces to the lift. Symptom: non-zero mean lift on a symmetric body ($C_L = 9.3$ at step 1) and drag missing its friction part | fixed | [ObstacleForces.cpp](../../src/postprocessing/ObstacleForces.cpp) |
-| **Bug: obstacle-surface velocities entered the pressure equation.** `advance()` updated the nodes on the obstacle faces and the BCs were only re-applied after the projection, so a spurious wall flux entered the divergence of the adjacent cells ($|\nabla\cdot u| \approx U/D$ there). BCs are now re-applied before the PPE and `advance()` skips surface/solid nodes | fixed | [main.cpp](../../src/main.cpp), [MomentumSolver.cpp](../../src/MomentumSolver.cpp) |
+| **Bug: obstacle-surface velocities entered the pressure equation.** `advance()` updated the nodes on the obstacle faces and the BCs were only re-applied after the projection, so a spurious wall flux entered the divergence of the adjacent cells ($\lvert\nabla\cdot u\rvert \approx U/D$ there). BCs are now re-applied before the PPE and `advance()` skips surface/solid nodes | fixed | [main.cpp](../../src/main.cpp), [MomentumSolver.cpp](../../src/MomentumSolver.cpp) |
 | **Bug: inverted obstacle wall distances.** For a node whose neighbour lies in the solid, the image-ghost distance used the *opposite* face of the obstacle ($D + h$ instead of $h$), so the cylinder walls were almost free-slip. Symptom: friction drag that decreased, and turned negative, under grid refinement, and a spurious leading-edge separation at $Re = 40$ | fixed | [DiffusionOperator.cpp](../../src/operators/DiffusionOperator.cpp), [MomentumSolver.cpp](../../src/MomentumSolver.cpp) |
 | **Bug: a diverged run was reported as converged.** `std::max(du, NaN)` drops the NaN, so the steady-state test passed and NaN fields were written. Now the case stops with an error and writes nothing | fixed | [main.cpp](../../src/main.cpp) |
 | Velocity nodes strictly inside the solid are held at zero (they were never used, but polluted the exported fields) | done | [MomentumSolver.cpp](../../src/MomentumSolver.cpp) |
@@ -116,76 +121,6 @@ The lid-driven cavity output is byte-identical before and after these
 changes, and `operator_verify` reproduces the same convergence data: they
 only affect scenarios with an immersed obstacle. **All cylinder results
 computed before these fixes are invalid.**
-
-## 5. Results — Benchmark A (`square_cylinder_breuer`)
-
-Run it with `scenario = square_cylinder_breuer` in `input/scenario.txt`, then
-`python3 plotters/plot_square_cylinder.py square_cylinder_breuer`. Default
-grid: 208×80 cells, $D/16$ across the cylinder, neighbouring cells differing
-by < 7 %; $\Delta t = 10^{-3}$ in solver units, i.e. $0.008\,D/U$ per step.
-Note the explicit AB2 diffusion limit $\Delta t \lesssim h^2/(8\nu)$ when
-refining.
-
-**Steady regime** (D/16, run to $\lVert\Delta u\rVert_\infty/\Delta t < 10^{-4}$):
-
-| $Re$ | $C_D$ | $L_r/D$ | Breuer, $L_r/D$ | Breuer, $C_D$ |
-|---|---|---|---|---|
-| 20 | 2.366 | 1.017 | 1.043 (fit) | — |
-| 30 | 1.944 | 1.586 | 1.597 (fit) | — |
-| 40 | 1.716 | 2.143 | 2.151 | 1.708 |
-
-**Grid study at $Re = 40$** (`output/square_cylinder_breuer/grid_study_Re40.csv`):
-
-| Grid | Cells | $C_D$ | of which friction | $L_r/D$ |
-|---|---|---|---|---|
-| $D/12$ | 156×60 | 1.7175 | 0.320 | 2.132 |
-| $D/16$ | 208×80 | 1.7155 | 0.308 | 2.143 |
-| $D/20$ | 260×100 | 1.7173 | 0.299 | 2.150 |
-| Breuer et al. | | 1.708 | | 2.151 |
-
-$C_D$ is grid-independent to 0.1 % and 0.5–0.6 % above the reference;
-$L_r/D$ converges monotonically to the reference (0.05 % on $D/20$). Halving
-$\Delta t$ changes $C_D$ by ≈ 1 % (splitting error of the non-incremental
-projection) and $L_r$ by < 0.5 %. Mean lift is zero to round-off
-($|C_L| < 10^{-6}$).
-
-**Onset of shedding** (D/16): at $Re = 50$ (run to $tU/D = 256$) the lift
-perturbation stays at round-off level ($\approx 3\times10^{-6}$) — steady,
-$C_D = 1.571$, $L_r/D = 2.681$ (fit: 2.705). At $Re = 70$ it grows and
-saturates (run to $tU/D = 648$; saturated from $tU/D \approx 412$, 30
-periods), with $St = 0.126$. The onset therefore lies between 50 and 70,
-bracketing Breuer's $Re_{cr} \approx 60$.
-
-**Periodic shedding** (D/16 unless stated; statistics over the saturated
-part of the record, from `t_star_stats_from` in `force_summary.csv`):
-
-| $Re$ | Window $tU/D$ | $St$ (FFT) | $St$ (zero crossings) | $\overline{C_D}$ | $C_{L,\mathrm{rms}}$ | $\overline{C_L}$ | Breuer $St$ |
-|---|---|---|---|---|---|---|---|
-| 70 | 412–648 | 0.1260 | 0.1260 | 1.437 | 0.0702 | $-3\times10^{-4}$ | — |
-| 100 | 187–400 | **0.1389** | 0.1389 | 1.372 | 0.1377 | $9\times10^{-5}$ | **0.137** |
-| 100 ($D/20$) | 186–400 | 0.1391 | 0.1391 | 1.359 | 0.1369 | | |
-| 150 | 140–300 | 0.1486 | 0.1487 | 1.355 | 0.2260 | $-2\times10^{-3}$ | — |
-| 200 | 138–300 | 0.1474 | 0.1475 | 1.386 | 0.3602 | $2\times10^{-3}$ | — |
-
-At $Re = 100$ the Strouhal number is 1.4 % above the reference and changes by
-0.2 % between $D/16$ and $D/20$; the mean lift is zero to $10^{-4}$.
-$\overline{C_D}$ at $Re = 100$ differs by 1 % between the two grids. Breuer
-et al. give $St(Re)$, $C_D$ and $C_L$ at $Re > 40$ only graphically, so no
-numerical comparison is possible for $Re = 70, 150, 200$ without the original
-paper. The FFT resolution is $\Delta St = 1/T_{\mathrm{window}}$ (≈ 0.005
-at $Re = 100$); the zero-crossing estimate agrees with it to $10^{-4}$.
-
-## 6. Next steps
-
-1. Obtain the original Breuer et al. (2000) paper (tables/figures of $St(Re)$
-   and $C_D(Re)$) to compare $Re = 70, 150, 200$ quantitatively.
-2. Implement the slip wall and set up Benchmark B (Sohankar et al. 1998,
-   $\beta = 5\,\%$) at $Re = 100$ and 150 for $St$, $\overline{C_D}$ and
-   $C_L'$, with a grid and time-step study.
-3. Consider an incremental pressure-correction scheme (removes the ≈ 1 %
-   $\Delta t$ dependence of the steady drag) and a stronger preconditioner
-   for the pressure solver (the Jacobi-PCG hits its iteration cap on the
-   finer grids).
 
 ## Sources
 

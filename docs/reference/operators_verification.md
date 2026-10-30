@@ -81,13 +81,13 @@ are set to zero — no contribution from outside the domain.
 **Singularity:** With all-Neumann BCs the system is singular (constant p is a null
 vector). `pinReference()` fixes p[0] = 0 to regularise.
 
-**C++ implementation:** [src/operators/LaplaceOperator.hpp](../src/operators/LaplaceOperator.hpp)
-/ [.cpp](../src/operators/LaplaceOperator.cpp)
+**C++ implementation:** [src/operators/LaplaceOperator.hpp](../../src/operators/LaplaceOperator.hpp)
+/ [.cpp](../../src/operators/LaplaceOperator.cpp)
 
 **Used by:**
-- [src/PressurePoissonSystem.cpp](../src/PressurePoissonSystem.cpp) — `assembleMatrix()` builds the
+- [src/PressurePoissonSystem.cpp](../../src/PressurePoissonSystem.cpp) — `assembleMatrix()` builds the
   identical FVM stencil for the PPE; `LaplaceOperator::assemble()` is the standalone form
-- [src/verification/verify_operators.cpp](../src/verification/verify_operators.cpp) — Suites 1, 5, 9, 10
+- [src/verification/verify_operators.cpp](../../src/verification/verify_operators.cpp) — Suites 1, 5, 9, 10
 
 ---
 
@@ -113,13 +113,13 @@ centres, evaluated exactly at the shared face — the natural position of the U/
 **Boundary treatment:** Boundary U-nodes (k=1, k=N+1) and V-nodes (l=1, l=M+1)
 are set to zero in the output (velocity BCs are imposed elsewhere).
 
-**C++ implementation:** [src/operators/GradientOperator.hpp](../src/operators/GradientOperator.hpp)
-/ [.cpp](../src/operators/GradientOperator.cpp)
+**C++ implementation:** [src/operators/GradientOperator.hpp](../../src/operators/GradientOperator.hpp)
+/ [.cpp](../../src/operators/GradientOperator.cpp)
 
 **Used by:**
-- [src/PressurePoissonSystem.cpp](../src/PressurePoissonSystem.cpp) — `projectVelocity()` applies
+- [src/PressurePoissonSystem.cpp](../../src/PressurePoissonSystem.cpp) — `projectVelocity()` applies
   `-(dt/ρ) · G·p` to correct the predictor velocity
-- [src/verification/verify_operators.cpp](../src/verification/verify_operators.cpp) — Suites 2, 5, 8
+- [src/verification/verify_operators.cpp](../../src/verification/verify_operators.cpp) — Suites 2, 5, 8
 
 ---
 
@@ -153,13 +153,13 @@ result[pIdx(i,j)] = flux / V[i][j]        (units: 1/time)
 **Important:** The U/V fields must be sampled at the **face position** (not the node
 centroid) for boundary cells — see Suite 3 notes below.
 
-**C++ implementation:** [src/operators/DivergenceOperator.hpp](../src/operators/DivergenceOperator.hpp)
-/ [.cpp](../src/operators/DivergenceOperator.cpp)
+**C++ implementation:** [src/operators/DivergenceOperator.hpp](../../src/operators/DivergenceOperator.hpp)
+/ [.cpp](../../src/operators/DivergenceOperator.cpp)
 
 **Used by:**
-- [src/PressurePoissonSystem.cpp](../src/PressurePoissonSystem.cpp) — `computeRHS()` evaluates
+- [src/PressurePoissonSystem.cpp](../../src/PressurePoissonSystem.cpp) — `computeRHS()` evaluates
   `−(ρ/dt)·V·D·u*`
-- [src/verification/verify_operators.cpp](../src/verification/verify_operators.cpp) — Suites 3, 5, 8
+- [src/verification/verify_operators.cpp](../../src/verification/verify_operators.cpp) — Suites 3, 5, 8
 
 ---
 
@@ -201,13 +201,13 @@ Similarly for v at i=1 (west) and i=N (east).
 - `u_ghost_north`, `u_ghost_south` — for the u-component (lid or no-slip)
 - `v_ghost_west`, `v_ghost_east` — for the v-component (always no-slip in lid cavity)
 
-**C++ implementation:** [src/operators/DiffusionOperator.hpp](../src/operators/DiffusionOperator.hpp)
-/ [.cpp](../src/operators/DiffusionOperator.cpp)
+**C++ implementation:** [src/operators/DiffusionOperator.hpp](../../src/operators/DiffusionOperator.hpp)
+/ [.cpp](../../src/operators/DiffusionOperator.cpp)
 
 **Used by:**
-- [src/MomentumSolver.cpp](../src/MomentumSolver.cpp) — holds a `DiffusionOperator diffOp_` member;
+- [src/MomentumSolver.cpp](../../src/MomentumSolver.cpp) — holds a `DiffusionOperator diffOp_` member;
   `uRHS()` and `vRHS()` call `diffOp_.diffuseU()` / `diffOp_.diffuseV()` per node
-- [src/verification/verify_operators.cpp](../src/verification/verify_operators.cpp) — Suites 4, 6, 7
+- [src/verification/verify_operators.cpp](../../src/verification/verify_operators.cpp) — Suites 4, 6, 7
 
 ---
 
@@ -239,11 +239,11 @@ u at V-node (i,l):  u_interp = 0.25·(u[i,l-1] + u[i+1,l-1] + u[i,l] + u[i+1,l])
 **Note:** Convection is **not** a standalone class. It is implemented inline inside
 `MomentumSolver::uRHS()` and `MomentumSolver::vRHS()`.
 
-**C++ implementation:** [src/MomentumSolver.hpp](../src/MomentumSolver.hpp)
-/ [src/MomentumSolver.cpp](../src/MomentumSolver.cpp) (private methods `uRHS`, `vRHS`)
+**C++ implementation:** [src/MomentumSolver.hpp](../../src/MomentumSolver.hpp)
+/ [src/MomentumSolver.cpp](../../src/MomentumSolver.cpp) (private methods `uRHS`, `vRHS`)
 
 **Used by:**
-- [src/MomentumSolver.cpp](../src/MomentumSolver.cpp) — `advance()` applies Adams-Bashforth 2
+- [src/MomentumSolver.cpp](../../src/MomentumSolver.cpp) — `advance()` applies Adams-Bashforth 2
   time integration using `uRHS`/`vRHS`
 
 ---
@@ -262,7 +262,7 @@ u at V-node (i,l):  u_interp = 0.25·(u[i,l-1] + u[i+1,l-1] + u[i,l] + u[i+1,l])
 
 ## 3. Existing Test Suite (Suites 1–5)
 
-All tests live in [src/verification/verify_operators.cpp](../src/verification/verify_operators.cpp)
+All tests live in [src/verification/verify_operators.cpp](../../src/verification/verify_operators.cpp)
 and are run by the `operator_verify` executable.  
 Each suite builds uniform N×N grids for N ∈ {8, 16, 32, 64}, measures the L∞ error, and
 estimates the convergence rate r = log₂(e_N / e_{2N}). Target: r ≈ 2.0.

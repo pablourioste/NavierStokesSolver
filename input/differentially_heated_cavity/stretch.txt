@@ -1,6 +1,8 @@
-# --- Parámetros de Mallado ---
+# --- Mesh parameters (see docs/input_reference.md) ---
 
-# Betas de estiramiento
+# Stretching betas: 0 = uniform, > 0 refines towards the END of the zone
+# (x = L, y = H), < 0 towards its start. In a single-zone cavity only
+# beta_x_west and beta_y_south act (the other zones have no cells).
 beta_x_west   = 0.8
 beta_x_east   = 0.8
 beta_y_north  = 0.8
@@ -8,9 +10,8 @@ beta_y_south  = 0.8
 beta_x_center = 0.0
 beta_y_center = 0.0
 
-# Número de celdas
-# Zona única: todas las celdas en west/south.
-# center y east = 0 (longitud cero, no se copian a la malla).
+# Cell counts. Single zone: all cells in west (x) / south (y, M_cells_west).
+# center and east = 0 (zero length, not copied into the mesh).
 N_cells_west    = 120
 M_cells_west    = 120
 N_cells_center  = 0

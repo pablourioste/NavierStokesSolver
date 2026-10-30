@@ -9,7 +9,7 @@ sub-folder such as square_cylinder_breuer/grid_study/D20 also works. The
 benchmark variant `square_cylinder_breuer` (input/square_cylinder_breuer/)
 reproduces Breuer et al. (2000) and is compared against it; the default
 scenario is compared, for orientation only, against Sohankar et al. (1998).
-See docs/scenarios/square_cylinder_validation.md.
+See docs/scenarios/square_cylinder_benchmarks.md.
 
 Writes, per case Re_<N>/figures/:
     vorticity              instantaneous vorticity (last time step)
@@ -38,7 +38,7 @@ from matplotlib.lines import Line2D
 import nsplot as ns
 
 # =============================================================================
-# Reference data — see docs/scenarios/square_cylinder_validation.md
+# Reference data — see docs/scenarios/square_cylinder_benchmarks.md
 # =============================================================================
 REFERENCES = {
     # Sohankar, Norberg & Davidson (1998), IJNMF 26:39-56, Table III:

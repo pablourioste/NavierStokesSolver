@@ -9,34 +9,43 @@ classes, each owning one piece of the per-timestep pipeline.
 ## 0. Overview: the per-timestep pipeline
 
 ```
-                      ┌───────────────────────────────────────────────────────┐
- u^n, v^n            │ 1. MomentumSolver::advance            (predictor)      │
- ────────────────────→│    u* = u^n + dt·[ν∇²u − (u·∇)u]    (AB2)            │
-                      │                                                       │
- θ^n (DHC only)       │ 2. addBuoyancy                        (DHC only)      │
- ────────────────────→│    v* += dt·Ra·Pr·θ                                   │
-                      │                                                       │
-                      │ 3. PressurePoissonSystem + CG         (projection)    │
-                      │    b = (ρ/dt)·∇·u*                                    │
-                      │    solve  ∇²p = b   via Conjugate Gradient            │
-                      │    u^{n+1} = u* − (dt/ρ)·∇p                           │
-                      │                                                       │
-                      │ 4. EnergySolver::advance              (DHC only)      │
-                      │    θ^{n+1} = θ^n + dt·[α∇²θ − (u^{n+1}·∇)θ]  (AB2)   │
-                      └───────────────────────────────────────────────────────┘
-                                          │
-                                          └─→ u^{n+1}, v^{n+1}, p, θ^{n+1}
+ u^n, v^n  (θ^n for the DHC)
+     │
+     ▼
+ 1. MomentumSolver::advance                  predictor, interior nodes only
+       u* = u^n + dt·[3/2 R^n − 1/2 R^{n−1}],   R = ν∇²u − (u·∇)u   (AB2)
+     │
+ 2. MomentumSolver::applyBoundaryConditions  walls, inlet, outlet, obstacle on u*
+     │
+ 3. addBuoyancy                              DHC only:  v* += dt·Ra·Pr·θ^n
+     │
+ 4. PressurePoissonSystem + CG / PCG         projection
+       b = −(ρ/dt)·(∇·u*)·V   →   solve A p = b   (A = −∇², SPD)
+       u^{n+1} = u* − (dt/ρ)·∇p              interior nodes only
+     │
+ 5. MomentumSolver::applyBoundaryConditions  reset boundary nodes, refresh outlet
+     │
+ 6. EnergySolver::advance                    DHC only:  θ^{n+1} = θ^n + dt·[∇²θ − ∇·(u^{n+1}θ)]  (AB2)
+     │
+ 7. ObstacleForces::computeForces            cylinder only:  C_D, C_L → forces.csv
+     │
+     ▼
+ u^{n+1}, v^{n+1}, p^{n+1}, θ^{n+1}          every 100 steps: ‖Δu‖∞/dt vs ss_tol, NaN check
 ```
 
+- **Step 2 matters.** The pressure equation must see the prescribed
+  boundary fluxes, not the predictor's values on boundary/obstacle nodes —
+  see [boundary_conditions.md §8](boundary_conditions.md#8-when-the-conditions-are-applied-in-a-time-step).
 - **Order matters.** Buoyancy is injected into $v^*$ *after* the momentum
   predictor and *before* the pressure solve, so the projection step makes the
   **final** field divergence-free **including** the buoyant forcing. The
   energy equation is advanced *last*, using the already-corrected,
   divergence-free velocity — keeping scalar transport consistent with a
   solenoidal flow field.
-- This ordering is also why the DHC extension (step 2 and step 4) never had
+- This ordering is also why the DHC extension (steps 3 and 6) never had
   to modify `MomentumSolver` or `PressurePoissonSystem` — see §5.
-- Driving loop: [src/main.cpp:360-427](../../src/main.cpp#L360-L427).
+- Driving loop: [src/main.cpp:360-427](../../src/main.cpp#L360-L427). Where every
+  boundary condition is enforced: [boundary_conditions.md](boundary_conditions.md).
 
 ---
 
@@ -68,7 +77,7 @@ operators, each used by one or more solvers above:
 - **Known limitation (stretched meshes):** on a **non-uniform** (stretched)
   mesh, `LaplaceOperator`'s stencil `a_E = Se/(x[i+1]-x[i])` degrades to
   **first-order** accuracy (measured rate ≈1.0 instead of ≈2.0 — see
-  `docs/OPERATORS_REPORT.md`, Suite 10). The fix (using `2/(h_e+h_w)` instead
+  [operators_verification.md](../reference/operators_verification.md), Suite 10). The fix (using `2/(h_e+h_w)` instead
   of `1/dx`) is identified but not yet applied to the production stencil —
   worth knowing before trusting convergence-order claims on highly stretched
   production grids.
@@ -102,11 +111,13 @@ analogue).
   boundary nodes retain their prescribed values.
 - **Time advance** ([MomentumSolver.cpp:359](../../src/MomentumSolver.cpp#L359)):
   Adams–Bashforth 2, falling back to Euler on the very first call (no
-  previous-step RHS buffer yet) — see [equations.md §3](equations.md#3-time-integration).
-- **`applyBoundaryConditions`** must be called once before the first
-  `advance()` and again after every projection step, so boundary velocity
-  nodes always carry their prescribed values (walls, moving lid) rather than
-  stale predictor values.
+  previous-step RHS buffer yet) — see [equations.md §4](equations.md#4-time-integration).
+  Nodes on or inside an immersed obstacle are skipped.
+- **`applyBoundaryConditions`** ([MomentumSolver.cpp:84](../../src/MomentumSolver.cpp#L84))
+  is called once before the first `advance()`, then twice per step: right
+  after `advance()` (so the pressure equation sees the prescribed boundary
+  fluxes) and after the projection. What it sets on each side is listed in
+  [boundary_conditions.md §3](boundary_conditions.md#3-velocity-normal-component-nodes-on-the-boundary).
 
 ---
 
@@ -120,8 +131,9 @@ Per-step usage (also see §0 diagram):
 ```cpp
 poisson.setVelocityFields(u_star, v_star);
 auto b = poisson.computeRHS(dt, rho);
-b[0] = 0.0;                                   // keep pinned row consistent
-p_sol = CG_solver.solve(A, b, p_sol);         // warm-started, see §4
+if (!is_cylinder) b[0] = 0.0;                 // keep pinned row consistent
+p_sol = is_cylinder ? PCG_solver.solve(A, b, p_sol)   // warm-started, see §4
+                    : CG_solver.solve(A, b, p_sol);
 poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
 ```
 
@@ -139,7 +151,10 @@ poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
   `pinReferencePressure` regularizes this by forcing row **and column** 0 to
   the identity (`p[0] = 0`), not just the diagonal — zeroing only the
   diagonal would leave the matrix inconsistent with a zeroed RHS and was a
-  real bug fixed during development (see `PROJECT_SUMMARY.md`).
+  real bug fixed during development (see
+  [development_log.md](../reference/development_log.md)). The cylinder
+  scenarios do not pin: their Dirichlet outlet row already fixes the constant
+  ([boundary_conditions.md §5](boundary_conditions.md#5-pressure)).
 - **`computeRHS`** ([PressurePoissonSystem.cpp:147](../../src/PressurePoissonSystem.cpp#L147)):
   integrates the predictor's divergence over each cell by outward-normal
   flux summation (FVM), reusing the same staggered index mapping as `mesh.md §2`:
@@ -172,9 +187,20 @@ poisson.projectVelocity(p_sol, dt, rho, u_star, v_star);
 - `CSRMatrix::fromTriplets` converts the assembled triplets into
   compressed-sparse-row storage once per case, used by every `multiply(A,v)`
   inside CG for the remainder of that run.
-- Other solvers (`PCG`, `GS`, `SOR`) exist in the same file for
-  experimentation/comparison but the production loop in `main.cpp` uses
-  plain `CG`.
+- **Which solver runs:** plain `CG` for the two cavities (serial); `PCG`
+  (Jacobi-preconditioned CG, OpenMP-parallel, threads set by
+  `OMP_NUM_THREADS`) for the cylinder scenarios, whose stretched meshes make
+  the matrix much worse conditioned. Selected in
+  [main.cpp:385-386](../../src/main.cpp#L385-L386).
+- **Stopping criterion** (both): $\lVert r\rVert_2 < 10^{-6}\lVert b\rVert_2$,
+  at most $\max(200, 5\sqrt{n})$ iterations
+  ([solver_sparse.cpp:195](../../src/solver/sparse/solver_sparse.cpp#L195),
+  [:293](../../src/solver/sparse/solver_sparse.cpp#L293)). If the cap is
+  reached a `CG WARNING`/`PCG WARNING` is printed and the time step continues
+  with the current iterate; `tools/run_case.sh` filters the PCG warnings out
+  of the stored log.
+- `GS`, `SOR` and `Jacobi` exist in the same file for experimentation and
+  are not used by the time loop.
 
 ---
 
@@ -197,7 +223,7 @@ reading even if you don't care about heat transfer specifically.
     CDS, same as momentum.
   - Diffusive term: 2nd-order FD with the same ghost-cell image method as
     `DiffusionOperator` (§1), but with isothermal/adiabatic ghost formulas
-    instead of velocity ones (see [equations.md §4](equations.md#4-boundary-conditions--the-ghost-cell-image-method)).
+    instead of velocity ones (see [boundary_conditions.md §6](boundary_conditions.md#6-temperature-dhc-only)).
   - Time advance ([`advance`](../../src/EnergySolver.cpp#L118)): identical AB2
     scheme and Euler-start fallback as `MomentumSolver::advance`.
 - **[`Buoyancy.hpp`](../../src/Buoyancy.hpp)** (`addBuoyancy`, header-only):
@@ -224,22 +250,19 @@ reading even if you don't care about heat transfer specifically.
 
 ## 6. Stability: this is a fully explicit scheme
 
-- Both the momentum predictor and the energy update are **explicit** in time
-  (no implicit diffusion solve) — only the pressure Poisson equation is
-  solved implicitly (as an elliptic constraint, not a time-marched implicit
-  diffusion term).
-- This caps the usable time step by the explicit diffusion stability limit:
-  $$
-  \Delta t \lesssim \frac{\Delta x^2}{2\,\max(\alpha,\nu)}
-  $$
-- For the lid-driven cavity ($\nu \sim \text{Re}^{-1}$, moderate $Re$),
-  typical production time steps (`dt ~ 1e-3`) are comfortably stable.
-- For the Differentially Heated Cavity, `nu = Pr` (often $O(1)$) and
-  $\alpha=1$ make diffusion much stiffer relative to the grid spacing, so
-  production runs need `dt ~ 1e-5` — using the lid-cavity-scale `dt`
-  diverges to NaN (the CG solve fails to converge first). See
-  [../scenarios/differentially_heated_cavity.md](../scenarios/differentially_heated_cavity.md)
-  for concrete numbers and validated settings.
+- Both the momentum predictor and the energy update are **explicit** in time;
+  only the pressure equation is solved implicitly (as a constraint).
+- The time step is therefore limited by the explicit diffusion and
+  convection limits given in [equations.md §6](equations.md#6-stability-of-the-explicit-scheme),
+  $\Delta t \lesssim h_{\min}^2/(8\,\max(\nu,\alpha))$ and
+  $\Delta t \lesssim h_{\min}/|\mathbf{u}|_{\max}$.
+- Lid-driven cavity and cylinder: $\nu = 1/Re$ is small, `dt ~ 1e-3` is
+  stable on the shipped grids (except $Re = 100$ on the 120×120 cavity grid,
+  which needs `dt = 3e-4`).
+- Differentially heated cavity: $\nu = Pr$ and $\alpha = 1$ are $O(1)$, so
+  `dt ~ 1e-5` or smaller is needed — the lid-cavity `dt` diverges to NaN
+  (the CG solve fails first). Validated settings:
+  [../scenarios/differentially_heated_cavity.md](../scenarios/differentially_heated_cavity.md).
 
 ---
 
@@ -286,9 +309,8 @@ per-timestep pipeline in §0.
   boundary nodes, just driven by `uNodeOnObstacleSurface`/`vNodeOnObstacleSurface`
   instead of a fixed index.
 - **Inlet/outlet**: see
-  [../scenarios/square_cylinder.md](../scenarios/square_cylinder.md) for how
-  `INLET`/`OUTLET` boundary types (which exist in `BCType` but were
-  essentially unexercised before this scenario) are handled — including a
+  [boundary_conditions.md](boundary_conditions.md) for how the
+  `INLET`/`INLET_PARABOLIC`/`OUTLET` boundary types are handled — including a
   bug fixed along the way: `ghostValue(INLET, faceVal)` previously returned
   the prescribed *normal* inflow speed as a *tangential* ghost value, which
   would have corrupted the cross-stencil at an inlet.

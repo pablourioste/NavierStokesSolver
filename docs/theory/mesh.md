@@ -86,7 +86,7 @@ vIdx(i, l) = (l-1)*N_cells_x + (i-1)     // V node  (i=1..N,   l=1..M+1)
 - `xvc[i]`, `yvc[j]` — **face** coordinates (cell boundaries).
 - `x[i]`, `y[j]` — cell **centroids**, including one layer of **ghost
   cells** (index 0 and N+1 / M+1) mirrored just outside the domain, used by
-  the ghost-cell image method (see [equations.md §4](equations.md#4-boundary-conditions--the-ghost-cell-image-method)).
+  the ghost-cell image method (see [boundary_conditions.md §4](boundary_conditions.md#4-velocity-tangential-component-ghost-cell-image-method)).
 - `Se, Sw, Sn, Ss` — face **areas** (`Δy·W_depth` for E/W faces, `Δx·W_depth`
   for N/S faces) — the depth `W_depth` makes a "2D" simulation a true 3D
   finite-volume problem with one cell in the third direction.
@@ -122,13 +122,24 @@ done with a `sinh`-based mapping in
 - Larger $|\beta|$ concentrates more cells near the focus point. In the
   differentially heated cavity this lets the mesh resolve the thin thermal
   boundary layers at the hot/cold walls, where the Nusselt number is measured.
-- Each of `beta_x_west`, `beta_x_east`, `beta_y_north`, `beta_y_south`
-  (`input/<scenario>/stretch.txt`) controls stretching **independently per zone/side**.
+- Each of `beta_x_west`, `beta_x_center`, `beta_x_east`, `beta_y_south`,
+  `beta_y_center`, `beta_y_north` (`input/<scenario>/stretch.txt`) controls
+  the stretching of **one zone** (§5), and refines towards **one end** of
+  that zone only (the end chosen by the sign of $\beta$).
+
+> **Single-zone cavities refine towards one corner only.** The two cavity
+> scenarios use a single zone (west in $x$, south in $y$), so only
+> `beta_x_west` and `beta_y_south` act; `beta_x_east`/`beta_y_north` have no
+> effect because those zones have no cells. With the shipped
+> $\beta = +0.8$ the 120×120 grid is refined towards $x = L$ and $y = H$
+> only: cell size goes from $h = 0.0144$ at the west/south walls to
+> $h = 0.0056$ at the east wall and under the lid. Refining both walls of a
+> cavity would need a second zone (see §5).
 
 > **Known accuracy caveat:** `LaplaceOperator`'s current FVM stencil uses
 > `a_E = Se / (x[i+1] - x[i])`, which is only first-order accurate when the
 > mesh is non-uniform (stretched) — confirmed by the MMS convergence test
-> ("Suite 10" in [docs/OPERATORS_REPORT.md](../OPERATORS_REPORT.md)), which
+> ("Suite 10" in [operators_verification.md](../reference/operators_verification.md)), which
 > measures rate ≈ 1.0 instead of the ≈ 2.0 achieved on uniform grids. The fix
 > (replacing `1/dx` with `2/(h_e+h_w)` in the stencil) is known but not yet
 > applied — see [solver.md §3](solver.md#3-pressurepoissonsystem-the-elliptic-constraint)
@@ -142,6 +153,20 @@ done with a `sinh`-based mapping in
   into **south / center / north** zones, each stretched independently and
   then merged into one set of global face coordinates
   ([src/mesh/MeshGenerator.cpp:191-237](../../src/mesh/MeshGenerator.cpp#L191-L237)).
+- Zone extents and their input keys:
+
+  | Direction | Zone | Extent | Cells | Stretching |
+  |---|---|---|---|---|
+  | $x$ | west | $[0,\ x_{NW}]$ | `N_cells_west` | `beta_x_west` |
+  | $x$ | center | $[x_{NW},\ x_{NE}]$ | `N_cells_center` | `beta_x_center` |
+  | $x$ | east | $[x_{NE},\ L]$ | `N_cells_east` | `beta_x_east` |
+  | $y$ | south | $[0,\ y_{SW}]$ | **`M_cells_west`** | `beta_y_south` |
+  | $y$ | center | $[y_{SW},\ y_{NW}]$ | `M_cells_center` | `beta_y_center` |
+  | $y$ | north | $[y_{NW},\ H]$ | **`M_cells_east`** | `beta_y_north` |
+
+  Note the naming: the $y$ cell counts reuse the `west/center/east` suffixes,
+  so `M_cells_west` is the **south** zone and `M_cells_east` the **north**
+  zone. `node_SE` is read but not used by the generator.
 - Zone boundaries are set by four corner nodes in
   `input/<scenario>/data.txt` (e.g. [the lid-driven cavity's](../../input/lid_driven_cavity/data.txt)): `node_NW`, `node_NE`, `node_SW`,
   `node_SE`.

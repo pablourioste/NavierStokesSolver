@@ -1,7 +1,7 @@
 # --- Domain & Geometry — Square Cylinder, Breuer et al. (2000) benchmark ---
 # Blockage D/H = 1/8 (D = 0.125, H = 1), channel length L = 50 D,
 # cylinder centred at L/4 = 12.5 D from the inlet (x = 1.5625).
-# See docs/scenarios/square_cylinder_validation.md, Benchmark A.
+# See docs/scenarios/square_cylinder_benchmarks.md, Benchmark A.
 
 L_domain = 6.25
 H_domain = 1.0

@@ -4,7 +4,7 @@ A 2D incompressible-flow solver using **Chorin's projection method** on a
 staggered MAC grid. This document follows the core algorithm through the code
 for the **lid-driven cavity**, function by function. The other scenarios (the
 Differentially Heated Cavity and the Square Cylinder) reuse the same core; see
-[theory/solver.md](theory/solver.md) and [scenarios/](scenarios/) for what they
+[theory/solver.md](../theory/solver.md) and [scenarios/](../scenarios/) for what they
 add.
 
 ---
@@ -55,7 +55,7 @@ The solver integrates the 2D incompressible Navier–Stokes equations:
 ## 2. File layout
 
 Only the files used by the core algorithm are listed; the full tree is in the
-[README](../README.md#project-structure).
+[README](../../README.md#repository-layout) and in [code_map.md](code_map.md).
 
 ```
 NavierStokesSolver/
@@ -107,9 +107,9 @@ NavierStokesSolver/
 │   └── plot_convergence.py               # Operator convergence-rate figure (MMS)
 │
 └── docs/
-    ├── ALGORITHM.md                      # This document
-    ├── OPERATORS_REPORT.md               # Detailed operator and test report
-    └── Lid_driven_structured.cpp         # Legacy single-file reference implementation
+    ├── reference/algorithm_walkthrough.md     # This document
+    ├── reference/operators_verification.md    # Detailed operator and test report
+    └── legacy/Lid_driven_structured.cpp       # Legacy single-file reference implementation
 ```
 
 **Executables built in `build/`:**
@@ -151,7 +151,7 @@ advance:
 
 ## 4. Main data structures
 
-Defined in [src/mesh/Mesh_config.h](../src/mesh/Mesh_config.h).
+Defined in [src/mesh/Mesh_config.h](../../src/mesh/Mesh_config.h).
 
 ### `InternalCell` — internal cell of the fluid domain
 ```cpp
@@ -248,7 +248,7 @@ corrected so that its divergence is zero.
 
 ## 6. Mesh generation — MeshGenerator
 
-File: [src/mesh/MeshGenerator.cpp](../src/mesh/MeshGenerator.cpp)
+File: [src/mesh/MeshGenerator.cpp](../../src/mesh/MeshGenerator.cpp)
 
 ### `generate_mesh()` — pressure (P) mesh
 Builds the base N×M mesh of pressure cells.
@@ -271,7 +271,7 @@ Same as above for the vertical component.
 
 ### `generate_stretched_coords(vc, num_cells, length, beta, offset)` — stretched coordinates
 Generates a 1D node distribution with optional refinement near the walls via a
-`sinh` mapping (see [theory/mesh.md §4](theory/mesh.md#4-mesh-stretching-refinement)).
+`sinh` mapping (see [theory/mesh.md §4](../theory/mesh.md#4-mesh-stretching-refinement)).
 
 ### `build_connectivity(GridData&)` — neighbour connectivity
 For each cell, finds its 4 neighbours (E, W, N, S), raises the `bc_*` flag when
@@ -308,7 +308,7 @@ All of them take `const GridData&` references and work with the alias
 
 ### 7.1 LaplaceOperator — ∇²p (P → P)
 
-File: [src/operators/LaplaceOperator.hpp](../src/operators/LaplaceOperator.hpp)
+File: [src/operators/LaplaceOperator.hpp](../../src/operators/LaplaceOperator.hpp)
 
 Discretises the Laplace operator on the pressure mesh with a 2nd-order FVM.
 
@@ -339,7 +339,7 @@ skipped. An `OUTLET` face instead gets a Dirichlet pressure contribution
 
 ### 7.2 GradientOperator — ∇p (P → U, V)
 
-File: [src/operators/GradientOperator.hpp](../src/operators/GradientOperator.hpp)
+File: [src/operators/GradientOperator.hpp](../../src/operators/GradientOperator.hpp)
 
 Discretises the pressure gradient from the P mesh onto the staggered U/V
 meshes with 2nd-order central finite differences.
@@ -371,7 +371,7 @@ integration-by-parts identity, checked in Suite 8).
 
 ### 7.3 DivergenceOperator — ∇·u (U, V → P)
 
-File: [src/operators/DivergenceOperator.hpp](../src/operators/DivergenceOperator.hpp)
+File: [src/operators/DivergenceOperator.hpp](../../src/operators/DivergenceOperator.hpp)
 
 Discretises the velocity divergence by integrating the net flux over each P
 cell with the FVM.
@@ -403,7 +403,7 @@ position (`xvc[k-1]`), not at the centroid, for the divergence to be exact
 
 ### 7.4 DiffusionOperator — ν∇²u (U, V → U, V)
 
-File: [src/operators/DiffusionOperator.hpp](../src/operators/DiffusionOperator.hpp)
+File: [src/operators/DiffusionOperator.hpp](../../src/operators/DiffusionOperator.hpp)
 
 Discretises the viscous terms ν∇²u and ν∇²v on the staggered meshes with
 2nd-order finite differences on a non-uniform mesh.
@@ -462,7 +462,7 @@ D·(G·φ) + (L·φ)/V = 0    (consistency of the Laplacian with D and G)
 
 ## 8. Predictor step — MomentumSolver
 
-Files: [src/MomentumSolver.hpp](../src/MomentumSolver.hpp) / [src/MomentumSolver.cpp](../src/MomentumSolver.cpp)
+Files: [src/MomentumSolver.hpp](../../src/MomentumSolver.hpp) / [src/MomentumSolver.cpp](../../src/MomentumSolver.cpp)
 
 Implements Chorin's **predictor step**: advances the velocities with diffusion
 and convection, ignoring the pressure gradient.
@@ -538,7 +538,7 @@ computed **before any update**, always from the `u^n` values.
 
 ## 9. Corrector step — PressurePoissonSystem
 
-Files: [src/PressurePoissonSystem.hpp](../src/PressurePoissonSystem.hpp) / [src/PressurePoissonSystem.cpp](../src/PressurePoissonSystem.cpp)
+Files: [src/PressurePoissonSystem.hpp](../../src/PressurePoissonSystem.hpp) / [src/PressurePoissonSystem.cpp](../../src/PressurePoissonSystem.cpp)
 
 Solves the **pressure Poisson equation (PPE)** and projects the velocity onto
 the divergence-free subspace. The class delegates to the operators of
@@ -618,7 +618,7 @@ Boundary nodes are not corrected.
 
 ## 10. Linear solvers — solver_sparse
 
-Files: [src/solver/sparse/solver_class_sparse.hpp](../src/solver/sparse/solver_class_sparse.hpp) / [solver_sparse.cpp](../src/solver/sparse/solver_sparse.cpp)
+Files: [src/solver/sparse/solver_class_sparse.hpp](../../src/solver/sparse/solver_class_sparse.hpp) / [solver_sparse.cpp](../../src/solver/sparse/solver_sparse.cpp)
 
 ### `Vector` type and CSR format
 ```cpp
@@ -657,7 +657,7 @@ iteration count to ~5–20 in quasi-steady flow.
 
 ## 11. Main loop — main.cpp
 
-File: [src/main.cpp](../src/main.cpp)
+File: [src/main.cpp](../../src/main.cpp)
 
 ### Parameters read from the input files
 
@@ -808,8 +808,8 @@ main()
 ## 13. Operator verification
 
 Executable: `./build/operator_verify`  
-Source: [src/verification/verify_operators.cpp](../src/verification/verify_operators.cpp)  
-Detailed documentation: [OPERATORS_REPORT.md](OPERATORS_REPORT.md)
+Source: [src/verification/verify_operators.cpp](../../src/verification/verify_operators.cpp)  
+Detailed documentation: [operators_verification.md](operators_verification.md)
 
 The verification program uses the **Method of Manufactured Solutions (MMS)**:
 a smooth analytical function is chosen, sampled on the mesh, the discrete
@@ -889,8 +889,8 @@ For every case in `output/lid_driven_cavity/` the script draws the flow fields
 Ghia et al. (1982), then the cross-case figures (profile comparison,
 stream-function overview) and `validation_summary.csv`. The Ghia column is
 selected from the case's Re (available: 100, 400, 1000, 3200, 5000, 7500,
-10000). Results are summarised in the [README](../README.md#1-lid-driven-cavity)
-and [scenarios/lid_driven_cavity.md](scenarios/lid_driven_cavity.md).
+10000). Results are summarised in
+[lid_driven_cavity.md §8](../scenarios/lid_driven_cavity.md#8-validation-results).
 
 ---
 
@@ -902,9 +902,9 @@ dt ≤ C · dx² / ν
 ```
 The explicit scheme also has a convective limit (CFL, `dt ≤ C·dx/|u|`); on
 stretched grids the smallest cell sets both limits. See
-[theory/solver.md §6](theory/solver.md#6-stability-this-is-a-fully-explicit-scheme)
+[theory/solver.md §6](../theory/solver.md#6-stability-this-is-a-fully-explicit-scheme)
 and the heated-cavity caveat in
-[scenarios/differentially_heated_cavity.md](scenarios/differentially_heated_cavity.md).
+[scenarios/differentially_heated_cavity.md](../scenarios/differentially_heated_cavity.md).
 
 ### Linear system convergence (PPE)
 - Relative tolerance: `||r|| < 1e-6 · ||b||`

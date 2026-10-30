@@ -524,7 +524,7 @@ static double runDiffusionV(int N)
 // North wall: u_wall=1  →  ghost = 2·1 − u_P
 //
 // For a linear field the second-order difference cancels exactly
-// (analytical proof in docs/OPERATORS_REPORT.md, Section 4, Suite 7).
+// (analytical proof in docs/reference/operators_verification.md, Section 4, Suite 7).
 // The expected error is < 1e-12 for every N (algebraic cancellation, not O(h²)).
 // =============================================================================
 static double runDiffusionLinear(int N)
