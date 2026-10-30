@@ -1,12 +1,13 @@
-# --- Dominio y Geometría ---
-# Los comentarios empiezan con #
+# --- Domain and geometry (see docs/input_reference.md) ---
+# Lines starting with # are comments
 
 L_domain = 1.0
 H_domain = 1.0
 W_depth  = 0.1
 
-# Lid Cavity sin obstáculo — zona "west/south" cubre el dominio completo.
-# Las zonas center y east tienen longitud cero (N_cells=0 en stretch.txt).
+# Closed cavity, no obstacle: every zone corner at (L, H), so the west/south
+# zone covers the whole domain. The center and east zones have zero length
+# (N_cells = 0 in stretch.txt).
 node_NW_x = 1.0
 node_NW_y = 1.0
 node_SE_x = 1.0

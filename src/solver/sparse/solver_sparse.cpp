@@ -54,7 +54,7 @@ Vector Jacobi::solve(const CSRMatrix& A, const Vector& b, const Vector& x0) cons
 
 
 // ---------------------------------------------------------------------------
-// Gauss-Seidel — warm-start core (same structure as Lid_driven_structured.cpp)
+// Gauss-Seidel — warm-start core (same structure as docs/legacy/Lid_driven_structured.cpp)
 //
 // The reference code (Lid_driven_structured.cpp) uses the previous time step's
 // pressure as initial guess (P is modified in-place, acting as warm start).

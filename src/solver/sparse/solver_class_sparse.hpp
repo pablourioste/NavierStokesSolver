@@ -88,7 +88,7 @@ public:
 class GS : public LinearSolver {
 public:
     Vector solve(const CSRMatrix& A, const Vector& b) const override;
-    // Warm-start: uses x0 as initial guess (same as reference Lid_driven_structured.cpp)
+    // Warm-start: uses x0 as initial guess (same as reference docs/legacy/Lid_driven_structured.cpp)
     Vector solve(const CSRMatrix& A, const Vector& b, const Vector& x0) const;
 };
 

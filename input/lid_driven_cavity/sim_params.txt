@@ -1,6 +1,7 @@
-Re    = 400
+# --- Physical and numerical parameters (see docs/input_reference.md) ---
+# The viscosity is derived per case from the swept number: nu = U_lid*L/Re
+# (lid-driven cavity) or nu = Pr (differentially heated cavity).
 U_lid = 1
-nu    = 0.0025
 dt    = 1e-3
 rho   = 1
 
